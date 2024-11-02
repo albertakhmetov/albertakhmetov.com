@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>Posts on Albert Akhmetov</title>
+    <link>http://localhost:1313/posts/</link>
+    <description>Recent content in Posts on Albert Akhmetov</description>
+    <generator>Hugo -- 0.136.5</generator>
+    <language>en-us</language>
+    <lastBuildDate>Wed, 27 Mar 2024 22:08:32 +0500</lastBuildDate>
+    <atom:link href="http://localhost:1313/posts/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Let me introduce myself</title>
+      <link>http://localhost:1313/posts/introduce/</link>
+      <pubDate>Wed, 27 Mar 2024 22:08:32 +0500</pubDate>
+      <guid>http://localhost:1313/posts/introduce/</guid>
+      <description>&lt;p&gt;Hello everyone! My name is Albert and I&amp;rsquo;m a software developer.&lt;/p&gt;</description>
+    </item>
+  </channel>
+</rss>
