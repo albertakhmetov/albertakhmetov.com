@@ -6,8 +6,15 @@
     <description>Recent content on Albert Akhmetov</description>
     <generator>Hugo -- 0.136.5</generator>
     <language>en-us</language>
-    <lastBuildDate>Wed, 27 Mar 2024 22:08:32 +0500</lastBuildDate>
+    <lastBuildDate>Sat, 09 Nov 2024 12:00:00 +0500</lastBuildDate>
     <atom:link href="https://albertakhmetov.com/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Using .NET build-in dependency injection with WinUI apps</title>
+      <link>https://albertakhmetov.com/posts/using-.net-build-in-dependency-injection-with-winui-apps/</link>
+      <pubDate>Sat, 09 Nov 2024 12:00:00 +0500</pubDate>
+      <guid>https://albertakhmetov.com/posts/using-.net-build-in-dependency-injection-with-winui-apps/</guid>
+      <description>&lt;p&gt;In this article I show how to use .NET build-in dependency injection with WinUI apps.&lt;/p&gt;</description>
+    </item>
     <item>
       <title>Let me introduce myself</title>
       <link>https://albertakhmetov.com/posts/introduce/</link>

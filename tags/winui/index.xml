@@ -1,26 +1,19 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
   <channel>
-    <title>Posts on Albert Akhmetov</title>
-    <link>https://albertakhmetov.com/posts/</link>
-    <description>Recent content in Posts on Albert Akhmetov</description>
+    <title>WinUI on Albert Akhmetov</title>
+    <link>https://albertakhmetov.com/tags/winui/</link>
+    <description>Recent content in WinUI on Albert Akhmetov</description>
     <generator>Hugo -- 0.136.5</generator>
     <language>en-us</language>
     <lastBuildDate>Sat, 09 Nov 2024 12:00:00 +0500</lastBuildDate>
-    <atom:link href="https://albertakhmetov.com/posts/index.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="https://albertakhmetov.com/tags/winui/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Using .NET build-in dependency injection with WinUI apps</title>
       <link>https://albertakhmetov.com/posts/using-.net-build-in-dependency-injection-with-winui-apps/</link>
       <pubDate>Sat, 09 Nov 2024 12:00:00 +0500</pubDate>
       <guid>https://albertakhmetov.com/posts/using-.net-build-in-dependency-injection-with-winui-apps/</guid>
       <description>&lt;p&gt;In this article I show how to use .NET build-in dependency injection with WinUI apps.&lt;/p&gt;</description>
-    </item>
-    <item>
-      <title>Let me introduce myself</title>
-      <link>https://albertakhmetov.com/posts/introduce/</link>
-      <pubDate>Wed, 27 Mar 2024 22:08:32 +0500</pubDate>
-      <guid>https://albertakhmetov.com/posts/introduce/</guid>
-      <description>&lt;p&gt;Hello everyone! My name is Albert and I&amp;rsquo;m a software developer.&lt;/p&gt;</description>
     </item>
   </channel>
 </rss>

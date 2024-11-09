@@ -2,17 +2,33 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
+    <loc>https://albertakhmetov.com/tags/.net/</loc>
+    <lastmod>2024-11-09T12:00:00+05:00</lastmod>
+  </url><url>
     <loc>https://albertakhmetov.com/</loc>
-    <lastmod>2024-03-27T22:45:08+05:00</lastmod>
+    <lastmod>2024-11-09T12:00:00+05:00</lastmod>
+  </url><url>
+    <loc>https://albertakhmetov.com/tags/di/</loc>
+    <lastmod>2024-11-09T12:00:00+05:00</lastmod>
+  </url><url>
+    <loc>https://albertakhmetov.com/tags/ioc/</loc>
+    <lastmod>2024-11-09T12:00:00+05:00</lastmod>
   </url><url>
     <loc>https://albertakhmetov.com/posts/</loc>
-    <lastmod>2024-03-27T22:45:08+05:00</lastmod>
+    <lastmod>2024-11-09T12:00:00+05:00</lastmod>
+  </url><url>
+    <loc>https://albertakhmetov.com/tags/</loc>
+    <lastmod>2024-11-09T12:00:00+05:00</lastmod>
+  </url><url>
+    <loc>https://albertakhmetov.com/posts/using-.net-build-in-dependency-injection-with-winui-apps/</loc>
+    <lastmod>2024-11-09T12:00:00+05:00</lastmod>
+  </url><url>
+    <loc>https://albertakhmetov.com/tags/winui/</loc>
+    <lastmod>2024-11-09T12:00:00+05:00</lastmod>
   </url><url>
     <loc>https://albertakhmetov.com/posts/introduce/</loc>
     <lastmod>2024-03-27T22:08:32+05:00</lastmod>
   </url><url>
     <loc>https://albertakhmetov.com/categories/</loc>
-  </url><url>
-    <loc>https://albertakhmetov.com/tags/</loc>
   </url>
 </urlset>
