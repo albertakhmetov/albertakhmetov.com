@@ -7,7 +7,7 @@
 <meta name="robots" content="index, follow">
 <title>Using .NET build-in dependency injection with WinUI apps | Albert Akhmetov</title>
 <meta name="keywords" content="WinUI, .NET, DI, IoC">
-<meta name="description" content=".NET has build-in dependency injection (DI). It&rsquo;s used primary for ASP.NET Core apps, but there&rsquo;s no reason do not use it with WinUI apps too.">
+<meta name="description" content=".NET has build-in dependency injection (DI). It&rsquo;s used primarily for ASP.NET Core apps, but there&rsquo;s no reason not to use it with WinUI apps too.">
 <meta name="author" content="">
 <link rel="canonical" href="https://albertakhmetov.com/posts/using-.net-build-in-dependency-injection-with-winui-apps/">
 <link crossorigin="anonymous" href="/assets/css/stylesheet.css" rel="preload stylesheet" as="style">
@@ -56,7 +56,7 @@
 
     </style>
 </noscript><meta property="og:title" content="Using .NET build-in dependency injection with WinUI apps" />
-<meta property="og:description" content=".NET has build-in dependency injection (DI). It&rsquo;s used primary for ASP.NET Core apps, but there&rsquo;s no reason do not use it with WinUI apps too." />
+<meta property="og:description" content=".NET has build-in dependency injection (DI). It&rsquo;s used primarily for ASP.NET Core apps, but there&rsquo;s no reason not to use it with WinUI apps too." />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://albertakhmetov.com/posts/using-.net-build-in-dependency-injection-with-winui-apps/" /><meta property="article:section" content="posts" />
 <meta property="article:published_time" content="2024-11-09T12:00:00+05:00" />
@@ -64,7 +64,7 @@
 
 <meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="Using .NET build-in dependency injection with WinUI apps"/>
-<meta name="twitter:description" content=".NET has build-in dependency injection (DI). It&rsquo;s used primary for ASP.NET Core apps, but there&rsquo;s no reason do not use it with WinUI apps too."/>
+<meta name="twitter:description" content=".NET has build-in dependency injection (DI). It&rsquo;s used primarily for ASP.NET Core apps, but there&rsquo;s no reason not to use it with WinUI apps too."/>
 
 
 <script type="application/ld+json">
@@ -93,12 +93,12 @@
   "@type": "BlogPosting",
   "headline": "Using .NET build-in dependency injection with WinUI apps",
   "name": "Using .NET build-in dependency injection with WinUI apps",
-  "description": ".NET has build-in dependency injection (DI). It\u0026rsquo;s used primary for ASP.NET Core apps, but there\u0026rsquo;s no reason do not use it with WinUI apps too.\n",
+  "description": ".NET has build-in dependency injection (DI). It\u0026rsquo;s used primarily for ASP.NET Core apps, but there\u0026rsquo;s no reason not to use it with WinUI apps too.\n",
   "keywords": [
     "WinUI", ".NET", "DI", "IoC"
   ],
-  "articleBody": ".NET has build-in dependency injection (DI). It’s used primary for ASP.NET Core apps, but there’s no reason do not use it with WinUI apps too.\nTo use DI you need to add package reference to the Microsoft.Extensions.DependencyInjection in the project file:\n",
-  "wordCount" : "647",
+  "articleBody": ".NET has build-in dependency injection (DI). It’s used primarily for ASP.NET Core apps, but there’s no reason not to use it with WinUI apps too.\nTo use DI you need to add package reference to the Microsoft.Extensions.DependencyInjection in the project file:\n",
+  "wordCount" : "650",
   "inLanguage": "en",
   "datePublished": "2024-11-09T12:00:00+05:00",
   "dateModified": "2024-11-09T12:00:00+05:00",
@@ -154,12 +154,12 @@
 
 </div>
   </header> 
-  <div class="post-content"><p>.NET has build-in dependency injection (DI). It&rsquo;s used primary for ASP.NET Core apps, but there&rsquo;s no reason do not use it with WinUI apps too.</p>
+  <div class="post-content"><p>.NET has build-in dependency injection (DI). It&rsquo;s used primarily for ASP.NET Core apps, but there&rsquo;s no reason not to use it with WinUI apps too.</p>
 <p>To use DI you need to add package reference to the <a href="https://www.nuget.org/packages/Microsoft.Extensions.DependencyInjection">Microsoft.Extensions.DependencyInjection</a> in the project file:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-XML" data-lang="XML"><span style="display:flex;"><span><span style="color:#f92672">&lt;ItemGroup&gt;</span>
 </span></span><span style="display:flex;"><span>	<span style="color:#f92672">&lt;PackageReference</span> <span style="color:#a6e22e">Include=</span><span style="color:#e6db74">&#34;Microsoft.Extensions.Hosting&#34;</span> <span style="color:#a6e22e">Version=</span><span style="color:#e6db74">&#34;8.0.1&#34;</span> <span style="color:#f92672">/&gt;</span>
 </span></span><span style="display:flex;"><span><span style="color:#f92672">&lt;/ItemGroup&gt;</span>
-</span></span></code></pre></div><p>To create <code>IHostBuilder</code> we need to take control over application initialization. For this purpose add the following constrant to the project file:</p>
+</span></span></code></pre></div><p>To create <code>IHostBuilder</code> we need to take control over application initialization. For this purpose add the following constraint to the project file:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-XML" data-lang="XML"><span style="display:flex;"><span><span style="color:#f92672">&lt;PropertyGroup&gt;</span>
 </span></span><span style="display:flex;"><span>	<span style="color:#75715e">&lt;!-- Use our own Main entry point so we can control the IHostBuilder --&gt;</span>
 </span></span><span style="display:flex;"><span>	<span style="color:#f92672">&lt;DefineConstants&gt;</span>DISABLE_XAML_GENERATED_MAIN<span style="color:#f92672">&lt;/DefineConstants&gt;</span>
@@ -264,7 +264,7 @@
 </span></span></span><span style="display:flex;"><span><span style="color:#a6e22e">    [DllImport(&#34;microsoft.ui.xaml.dll&#34;)]</span>
 </span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">extern</span> <span style="color:#66d9ef">void</span> XamlCheckProcessRequirements();
 </span></span><span style="display:flex;"><span>}
-</span></span></code></pre></div><p>When the program starts, the <code>StartAsync</code> method is called. This method initializes the WinUI infrastructure and starts the application. <a href="https://learn.microsoft.com/en-us/windows/windows-app-sdk/api/winrt/microsoft.ui.xaml.application.start"><code>Start</code></a> method blocks the thread until the application is exit. Therefore, we run it in a task with continuation to call the <code>OnAppClosed</code> method. <code>OnAppClosed</code> method is used to stop the service when application is exit.</p>
+</span></span></code></pre></div><p>When the program starts, the <code>StartAsync</code> method is called. This method initializes the WinUI infrastructure and starts the application. <a href="https://learn.microsoft.com/en-us/windows/windows-app-sdk/api/winrt/microsoft.ui.xaml.application.start"><code>Start</code></a> method blocks the thread until the application is exitted. Therefore, we run it in a task with continuation to call the <code>OnAppClosed</code> method. <code>OnAppClosed</code> method is used to stop the service when application is exitted.</p>
 <p>The <code>InitAndStartApp</code> method is called from the UI thread, so we create an instance of the <code>App</code> class there. How? <code>App</code> class implements the following <code>IApp</code> interface:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C#" data-lang="C#"><span style="display:flex;"><span><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">interface</span> <span style="color:#a6e22e">IApp</span>
 </span></span><span style="display:flex;"><span>{
@@ -272,9 +272,9 @@
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">event</span> UnhandledExceptionEventHandler UnhandledException;
 </span></span><span style="display:flex;"><span>}
-</span></span></code></pre></div><p>When we request the <code>IApp</code> interface, instance of the <code>App</code> class is created. <code>IApp</code> interface provides <code>Exit</code> method to terminate the application (is used in <code>StopAsync</code> method) and <code>UnhandledException</code> event to log exceptions (<code>OnAppOnUnhandledException</code> method).</p>
-<p>That&rsquo;s it. We implemented DI infrastructure and the application lifetime service. From this moment we can register services in the <code>CreateBuilder</code> method and refer them in a class constructor.</p>
-<p>As example, let&rsquo;s change initialization of main window from creating via constructor to initialize it with DI.</p>
+</span></span></code></pre></div><p>When we request the <code>IApp</code> interface, instance of the <code>App</code> class is created. <code>IApp</code> interface provides <code>Exit</code> method to terminate the application (it&rsquo;s used in <code>StopAsync</code> method) and <code>UnhandledException</code> event to log exceptions (<code>OnAppOnUnhandledException</code> method).</p>
+<p>That&rsquo;s it. We implemented DI infrastructure and the application lifecycle service. From this moment we can register services in the <code>CreateBuilder</code> method and refer to them in a class constructor.</p>
+<p>As example, let&rsquo;s change initialization of the main window from creating via constructor to initialize it with DI.</p>
 <p>To retrieve <code>App</code> interface in <code>MainWindow</code> class we need to add parameterized constructor as following:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C#" data-lang="C#"><span style="display:flex;"><span><span style="color:#66d9ef">private</span> IApp app;
 </span></span><span style="display:flex;"><span>
@@ -293,7 +293,7 @@
 </span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">base</span>.OnLaunched(args);
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>	mainWindow = serviceProvider.GetRequiredService&lt;MainWindow&gt;();
-</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// The application exits when the main window closes.</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// The application is exitted when the main window closes.</span>
 </span></span><span style="display:flex;"><span>	mainWindow.Closed += OnMainWindowClosed;
 </span></span><span style="display:flex;"><span>	mainWindow.AppWindow.Show(<span style="color:#66d9ef">true</span>);
 </span></span><span style="display:flex;"><span>}
