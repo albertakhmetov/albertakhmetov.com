@@ -7,7 +7,7 @@
 <meta name="robots" content="index, follow">
 <title>Using .NET build-in dependency injection with WinUI apps | Albert Akhmetov</title>
 <meta name="keywords" content="WinUI, .NET, DI, IoC">
-<meta name="description" content="In this article I show how to use .NET build-in dependency injection with WinUI apps.">
+<meta name="description" content=".NET has build-in dependency injection (DI). It&rsquo;s used primary for ASP.NET Core apps, but there&rsquo;s no reason do not use it with WinUI apps too.">
 <meta name="author" content="">
 <link rel="canonical" href="https://albertakhmetov.com/posts/using-.net-build-in-dependency-injection-with-winui-apps/">
 <link crossorigin="anonymous" href="/assets/css/stylesheet.css" rel="preload stylesheet" as="style">
@@ -56,7 +56,7 @@
 
     </style>
 </noscript><meta property="og:title" content="Using .NET build-in dependency injection with WinUI apps" />
-<meta property="og:description" content="In this article I show how to use .NET build-in dependency injection with WinUI apps." />
+<meta property="og:description" content=".NET has build-in dependency injection (DI). It&rsquo;s used primary for ASP.NET Core apps, but there&rsquo;s no reason do not use it with WinUI apps too." />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://albertakhmetov.com/posts/using-.net-build-in-dependency-injection-with-winui-apps/" /><meta property="article:section" content="posts" />
 <meta property="article:published_time" content="2024-11-09T12:00:00+05:00" />
@@ -64,7 +64,7 @@
 
 <meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="Using .NET build-in dependency injection with WinUI apps"/>
-<meta name="twitter:description" content="In this article I show how to use .NET build-in dependency injection with WinUI apps."/>
+<meta name="twitter:description" content=".NET has build-in dependency injection (DI). It&rsquo;s used primary for ASP.NET Core apps, but there&rsquo;s no reason do not use it with WinUI apps too."/>
 
 
 <script type="application/ld+json">
@@ -93,12 +93,12 @@
   "@type": "BlogPosting",
   "headline": "Using .NET build-in dependency injection with WinUI apps",
   "name": "Using .NET build-in dependency injection with WinUI apps",
-  "description": "In this article I show how to use .NET build-in dependency injection with WinUI apps.\n",
+  "description": ".NET has build-in dependency injection (DI). It\u0026rsquo;s used primary for ASP.NET Core apps, but there\u0026rsquo;s no reason do not use it with WinUI apps too.\n",
   "keywords": [
     "WinUI", ".NET", "DI", "IoC"
   ],
-  "articleBody": "In this article I show how to use .NET build-in dependency injection with WinUI apps.\n.NET has build-in dependency injection (DI). It’s used primary for ASP.NET Core apps, but there’s no reason do not use it with WinUI apps too.\nTo use DI you need to add package reference to the Microsoft.Extensions.DependencyInjection in the project file:\n",
-  "wordCount" : "656",
+  "articleBody": ".NET has build-in dependency injection (DI). It’s used primary for ASP.NET Core apps, but there’s no reason do not use it with WinUI apps too.\nTo use DI you need to add package reference to the Microsoft.Extensions.DependencyInjection in the project file:\n",
+  "wordCount" : "641",
   "inLanguage": "en",
   "datePublished": "2024-11-09T12:00:00+05:00",
   "dateModified": "2024-11-09T12:00:00+05:00",
@@ -154,8 +154,7 @@
 
 </div>
   </header> 
-  <div class="post-content"><p>In this article I show how to use .NET build-in dependency injection with WinUI apps.</p>
-<p>.NET has build-in dependency injection (DI). It&rsquo;s used primary for ASP.NET Core apps, but there&rsquo;s no reason do not use it with WinUI apps too.</p>
+  <div class="post-content"><p>.NET has build-in dependency injection (DI). It&rsquo;s used primary for ASP.NET Core apps, but there&rsquo;s no reason do not use it with WinUI apps too.</p>
 <p>To use DI you need to add package reference to the <a href="https://www.nuget.org/packages/Microsoft.Extensions.DependencyInjection">Microsoft.Extensions.DependencyInjection</a> in the project file:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-XML" data-lang="XML"><span style="display:flex;"><span><span style="color:#f92672">&lt;ItemGroup&gt;</span>
 </span></span><span style="display:flex;"><span>	<span style="color:#f92672">&lt;PackageReference</span> <span style="color:#a6e22e">Include=</span><span style="color:#e6db74">&#34;Microsoft.Extensions.Hosting&#34;</span> <span style="color:#a6e22e">Version=</span><span style="color:#e6db74">&#34;8.0.1&#34;</span> <span style="color:#f92672">/&gt;</span>
