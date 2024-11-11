@@ -1,26 +1,19 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
   <channel>
-    <title>WinUI on Albert Akhmetov</title>
-    <link>https://albertakhmetov.com/tags/winui/</link>
-    <description>Recent content in WinUI on Albert Akhmetov</description>
+    <title>ItemsControl on Albert Akhmetov</title>
+    <link>https://albertakhmetov.com/tags/itemscontrol/</link>
+    <description>Recent content in ItemsControl on Albert Akhmetov</description>
     <generator>Hugo -- 0.136.5</generator>
     <language>en-us</language>
     <lastBuildDate>Mon, 11 Nov 2024 23:00:00 +0500</lastBuildDate>
-    <atom:link href="https://albertakhmetov.com/tags/winui/index.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="https://albertakhmetov.com/tags/itemscontrol/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>ItemsControl and DataTemplateSelector in WinUI</title>
       <link>https://albertakhmetov.com/posts/itemscontrol-and-datatemplateselector-in-winui/</link>
       <pubDate>Mon, 11 Nov 2024 23:00:00 +0500</pubDate>
       <guid>https://albertakhmetov.com/posts/itemscontrol-and-datatemplateselector-in-winui/</guid>
       <description>&lt;p&gt;Sometimes even simple things can be confusing. Especially if you don&amp;rsquo;t encounter them every day. The funniest thing is if you&amp;rsquo;ve already solved this problem and successfully forgot about it after some time.&lt;/p&gt;</description>
-    </item>
-    <item>
-      <title>Using .NET build-in dependency injection with WinUI apps</title>
-      <link>https://albertakhmetov.com/posts/using-.net-build-in-dependency-injection-with-winui-apps/</link>
-      <pubDate>Sat, 09 Nov 2024 12:00:00 +0500</pubDate>
-      <guid>https://albertakhmetov.com/posts/using-.net-build-in-dependency-injection-with-winui-apps/</guid>
-      <description>&lt;p&gt;.NET has build-in dependency injection (DI). It&amp;rsquo;s used primarily for ASP.NET Core apps, but there&amp;rsquo;s no reason not to use it with WinUI apps too.&lt;/p&gt;</description>
     </item>
   </channel>
 </rss>
