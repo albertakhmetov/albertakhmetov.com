@@ -10,9 +10,9 @@
     <atom:link href="https://albertakhmetov.com/tags/ioc/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Using .NET build-in dependency injection with WinUI apps</title>
-      <link>https://albertakhmetov.com/posts/using-.net-build-in-dependency-injection-with-winui-apps/</link>
+      <link>https://albertakhmetov.com/posts/2024/using-.net-build-in-dependency-injection-with-winui-apps/</link>
       <pubDate>Sat, 09 Nov 2024 12:00:00 +0500</pubDate>
-      <guid>https://albertakhmetov.com/posts/using-.net-build-in-dependency-injection-with-winui-apps/</guid>
+      <guid>https://albertakhmetov.com/posts/2024/using-.net-build-in-dependency-injection-with-winui-apps/</guid>
       <description>&lt;p&gt;.NET has build-in dependency injection (DI). It&amp;rsquo;s used primarily for ASP.NET Core apps, but there&amp;rsquo;s no reason not to use it with WinUI apps too.&lt;/p&gt;</description>
     </item>
   </channel>
