@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>NuGet on Albert Akhmetov</title>
+    <link>https://albertakhmetov.com/tags/nuget/</link>
+    <description>Recent content in NuGet on Albert Akhmetov</description>
+    <generator>Hugo -- 0.136.5</generator>
+    <language>en-us</language>
+    <lastBuildDate>Sun, 01 Dec 2024 13:00:00 +0500</lastBuildDate>
+    <atom:link href="https://albertakhmetov.com/tags/nuget/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>GitHub Packages as the private NuGet repository</title>
+      <link>https://albertakhmetov.com/posts/2024/github-packages-as-the-private-nuget-repository/</link>
+      <pubDate>Sun, 01 Dec 2024 13:00:00 +0500</pubDate>
+      <guid>https://albertakhmetov.com/posts/2024/github-packages-as-the-private-nuget-repository/</guid>
+      <description>&lt;p&gt;GitHub Packages allows to organize the private NuGet repository. In this note I show how to configure the private NuGet repository with GitHub Packages.&lt;/p&gt;</description>
+    </item>
+  </channel>
+</rss>

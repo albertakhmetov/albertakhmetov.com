@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>GitHub Packages as the private NuGet repository | Albert Akhmetov</title>
+<meta name="keywords" content="private NuGet repository, GitHub Packages NuGet">
+<meta name="description" content="GitHub Packages allows to organize the private NuGet repository. In this note I show how to configure the private NuGet repository with GitHub Packages.">
+<meta name="author" content="">
+<link rel="canonical" href="https://albertakhmetov.com/posts/2024/github-packages-as-the-private-nuget-repository/">
+<link crossorigin="anonymous" href="/assets/css/stylesheet.css" rel="preload stylesheet" as="style">
+<link rel="icon" href="https://albertakhmetov.com/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="https://albertakhmetov.com/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://albertakhmetov.com/favicon-32x32.png">
+<link rel="apple-touch-icon" href="https://albertakhmetov.com/apple-touch-icon.png">
+<link rel="mask-icon" href="https://albertakhmetov.com/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<link rel="alternate" hreflang="en" href="https://albertakhmetov.com/posts/2024/github-packages-as-the-private-nuget-repository/">
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --code-block-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-track {
+                background: 0 0;
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-thumb {
+                border-color: var(--theme);
+            }
+        }
+
+    </style>
+</noscript><meta property="og:title" content="GitHub Packages as the private NuGet repository" />
+<meta property="og:description" content="GitHub Packages allows to organize the private NuGet repository. In this note I show how to configure the private NuGet repository with GitHub Packages." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://albertakhmetov.com/posts/2024/github-packages-as-the-private-nuget-repository/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2024-12-01T13:00:00+05:00" />
+<meta property="article:modified_time" content="2024-12-01T13:00:00+05:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="GitHub Packages as the private NuGet repository"/>
+<meta name="twitter:description" content="GitHub Packages allows to organize the private NuGet repository. In this note I show how to configure the private NuGet repository with GitHub Packages."/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Posts",
+      "item": "https://albertakhmetov.com/posts/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "GitHub Packages as the private NuGet repository",
+      "item": "https://albertakhmetov.com/posts/2024/github-packages-as-the-private-nuget-repository/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "GitHub Packages as the private NuGet repository",
+  "name": "GitHub Packages as the private NuGet repository",
+  "description": "GitHub Packages allows to organize the private NuGet repository. In this note I show how to configure the private NuGet repository with GitHub Packages.\n",
+  "keywords": [
+    "private NuGet repository", "GitHub Packages NuGet"
+  ],
+  "articleBody": "GitHub Packages allows to organize the private NuGet repository. In this note I show how to configure the private NuGet repository with GitHub Packages.\nI’m considering the case when a free private account is used. For more detailed information see the documentation.\nFirst and foremost - there are serious limitations in the free account: only 500 mb of storage and 1Gb of traffic. The traffic limit resets monthly, but the storage limit is permanent. So the primary usage is small packages for private projects. It’s better to use NuGet.org to host public packages.\nFor personal projects I prefer to configure NuGet package in the csproj file. In addition to the standard properies we need to set RepositoryUrl property with the URL to the project repository. This property connects the repository to the package.\nIn addition to configuring a package in csproj file I also use the following solution structure:\n.\\src\r%LIB_NAME%\\%LIB_NAME%.csproj \u003c\u003c the project file\r%LIB_NAME%.sln\r.\\target\rLib\\Release\\*.nuget \u003c\u003c packages are published here The config file relies on this structure.\nThe GitHub Actions contains five steps:\nCheckout the source Install the .NET SDK Add GitHub Packages to the NuGet source list (we use github name for this source) Create the NuGet package Publish it to the GitHub Package (push to github source) YAML file for the solution structure that is presented above:\nname: Publish NuGet package on: push: tags: - v[0-9]+.** jobs: build: strategy: matrix: configuration: [Release] runs-on: windows-latest permissions: contents: read packages: write steps: - name: Checkout uses: actions/checkout@v4.2.2 with: fetch-depth: 0 - name: Install .NET uses: actions/setup-dotnet@v4.1.0 with: dotnet-version: 9.0.x - name: Add \"github\" source run: dotnet nuget add source --username %USERNAME% --password ${{ secrets.GITHUB_TOKEN }} --store-password-in-clear-text --name github \"https://nuget.pkg.github.com/%USERNAME%/index.json\" - name: Pack run: dotnet pack ./src/%LIB_NAME%/%LIB_NAME%.csproj -c Release - name: Publish to GitHub packages run: dotnet nuget push ${{ github.workspace }}\\target\\Lib\\Release\\*.nupkg --api-key ${{ secrets.GITHUB_TOKEN }} --source \"github\" %USERNAME%- GitHub account name. For example, my account name is albertakhmetov\n%LIB_NAME% - the name of the package project (see above).\nThe important part is permissions sections. We need to add packages: write and restore contents: read (as it’s erased) permissions.\nThis workflow runs when the version tag is pushed (i.e. v0.1.0-alpha and so on). If everything goes as planned, the package should appear in the Packages tab.\nOk, package is published to the repository. How to consume the NuGet package from GitHub Packages? There are two scenarios: building the solution on a local machine and using GitHub Actions.\nFor the local machine add the following NuGet.config file to the root of the repository folder (don’t forget to replace %USERNAME% with GitHub account name):\n\u003c?xml version=\"1.0\" encoding=\"utf-8\"?\u003e ",
+  "wordCount" : "835",
+  "inLanguage": "en",
+  "datePublished": "2024-12-01T13:00:00+05:00",
+  "dateModified": "2024-12-01T13:00:00+05:00",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://albertakhmetov.com/posts/2024/github-packages-as-the-private-nuget-repository/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Albert Akhmetov",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://albertakhmetov.com/favicon.ico"
+    }
+  }
+}
+</script>
+</head>
+
+<body class="" id="top">
+<script>
+    if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark');
+    }
+
+</script>
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="https://albertakhmetov.com/" accesskey="h" title="Albert Akhmetov (Alt + H)">Albert Akhmetov</a>
+            <div class="logo-switches">
+            </div>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="https://albertakhmetov.com/posts/introduce" title="about me">
+                    <span>about me</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    
+    <h1 class="post-title entry-hint-parent">
+      GitHub Packages as the private NuGet repository
+    </h1>
+    <div class="post-meta"><span title='2024-12-01 13:00:00 +0500 +05'>December 1, 2024</span>
+
+</div>
+  </header> 
+  <div class="post-content"><p>GitHub Packages allows to organize the private NuGet repository. In this note I show how to configure the private NuGet repository with GitHub Packages.</p>
+<p>I&rsquo;m considering the case when a free private account is used. For more detailed information see the <a href="https://docs.github.com/en/packages/learn-github-packages">documentation</a>.</p>
+<p>First and foremost - there are <a href="https://docs.github.com/en/billing/managing-billing-for-your-products/managing-billing-for-github-packages/about-billing-for-github-packages">serious limitations in the free account</a>: only <strong>500 mb of storage</strong> and <strong>1Gb of traffic</strong>. The traffic limit resets monthly, but the storage limit is permanent. So the primary usage is small packages for private projects. It&rsquo;s better to use <a href="https://www.nuget.org/">NuGet.org</a> to host public packages.</p>
+<p>For personal projects I prefer to configure NuGet package in the <code>csproj</code> file. In addition to <a href="https://learn.microsoft.com/en-us/nuget/create-packages/creating-a-package-dotnet-cli#set-properties">the standard properies</a> we need to set <code>RepositoryUrl</code> property with the URL to the project repository. This property <a href="https://docs.github.com/en/packages/learn-github-packages/connecting-a-repository-to-a-package">connects the repository to the package</a>.</p>
+<p>In addition to configuring a package in <code>csproj</code> file I also use the following solution structure:</p>
+<pre tabindex="0"><code>.\src
+    %LIB_NAME%\%LIB_NAME%.csproj &lt;&lt; the project file
+    %LIB_NAME%.sln
+.\target
+    Lib\Release\*.nuget &lt;&lt; packages are published here
+</code></pre><p>The config file relies on this structure.</p>
+<p>The GitHub Actions contains five steps:</p>
+<ul>
+<li>Checkout the source</li>
+<li>Install the .NET SDK</li>
+<li>Add GitHub Packages to the NuGet source list (we use <code>github</code> name for this source)</li>
+<li>Create the NuGet package</li>
+<li>Publish it to the GitHub Package (push to <code>github</code> source)</li>
+</ul>
+<p><code>YAML</code> file for the solution structure that is presented above:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span><span style="color:#f92672">name</span>: <span style="color:#ae81ff">Publish NuGet package</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">on</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">push</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">tags</span>:
+</span></span><span style="display:flex;"><span>    - <span style="color:#ae81ff">v[0-9]+.**</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">jobs</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">build</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">strategy</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">matrix</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">configuration</span>: [<span style="color:#ae81ff">Release]</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">runs-on</span>: <span style="color:#ae81ff">windows-latest</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">permissions</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">contents</span>: <span style="color:#ae81ff">read</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">packages</span>: <span style="color:#ae81ff">write</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">steps</span>:
+</span></span><span style="display:flex;"><span>    - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">Checkout</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">uses</span>: <span style="color:#ae81ff">actions/checkout@v4.2.2</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">with</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">fetch-depth</span>: <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">Install .NET</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">uses</span>: <span style="color:#ae81ff">actions/setup-dotnet@v4.1.0</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">with</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">dotnet-version</span>: <span style="color:#ae81ff">9.0</span><span style="color:#ae81ff">.x</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">Add &#34;github&#34; source </span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">run</span>: <span style="color:#ae81ff">dotnet nuget add source --username %USERNAME% --password ${{ secrets.GITHUB_TOKEN }} --store-password-in-clear-text --name github &#34;https://nuget.pkg.github.com/%USERNAME%/index.json&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">Pack</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">run</span>: <span style="color:#ae81ff">dotnet pack ./src/%LIB_NAME%/%LIB_NAME%.csproj -c Release</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">Publish to GitHub packages </span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">run</span>: <span style="color:#ae81ff">dotnet nuget push ${{ github.workspace }}\target\Lib\Release\*.nupkg --api-key ${{ secrets.GITHUB_TOKEN }}  --source &#34;github&#34;</span>
+</span></span></code></pre></div><p><code>%USERNAME%</code>- GitHub account name. For example, my account name is <a href="https://github.com/albertakhmetov">albertakhmetov</a></p>
+<p><code>%LIB_NAME%</code> - the name of the package project (see above).</p>
+<p>The important part is <code>permissions</code> sections. We need to add <code>packages: write</code> and restore <code>contents: read</code> (as it&rsquo;s erased) permissions.</p>
+<p>This workflow runs when the version tag is pushed (i.e. v0.1.0-alpha and so on). If everything goes as planned, the package should appear in the Packages tab.</p>
+<p>Ok, package is published to the repository. How to consume the NuGet package from GitHub Packages? There are two scenarios: building the solution on a local machine and using GitHub Actions.</p>
+<p>For the local machine add the following <code>NuGet.config</code> file to the root of the repository folder (don&rsquo;t forget to replace %USERNAME% with GitHub account name):</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-XML" data-lang="XML"><span style="display:flex;"><span><span style="color:#75715e">&lt;?xml version=&#34;1.0&#34; encoding=&#34;utf-8&#34;?&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">&lt;configuration&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&lt;packageSources&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&lt;clear</span> <span style="color:#f92672">/&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&lt;add</span> <span style="color:#a6e22e">key=</span><span style="color:#e6db74">&#34;github&#34;</span> <span style="color:#a6e22e">value=</span><span style="color:#e6db74">&#34;https://nuget.pkg.github.com/%USERNAME%/index.json&#34;</span> <span style="color:#f92672">/&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&lt;add</span> <span style="color:#a6e22e">key=</span><span style="color:#e6db74">&#34;nuget.org&#34;</span> <span style="color:#a6e22e">value=</span><span style="color:#e6db74">&#34;https://api.nuget.org/v3/index.json&#34;</span> <span style="color:#a6e22e">protocolVersion=</span><span style="color:#e6db74">&#34;3&#34;</span> <span style="color:#f92672">/&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&lt;/packageSources&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">&lt;/configuration&gt;</span>
+</span></span></code></pre></div><p>But this isn&rsquo;t enough. We need to create readonly <a href="https://github.com/settings/tokens">Personal access token (classic)</a>:</p>
+<p><img loading="lazy" src="token.png" alt="Create the token"  />
+</p>
+<p>We need only <code>read:packages</code> permission.</p>
+<p><strong>Don&rsquo;t forget to store the generated token! It&rsquo;s impossible to view it again. Only regenerate.</strong></p>
+<p>Storing tokens in config files isn&rsquo;t safe (even if it&rsquo;s a private repository). There are several ways to <a href="https://learn.microsoft.com/en-us/nuget/consume-packages/consuming-packages-authenticated-feeds#credentials-in-environment-variables">Consuming packages from authenticated feeds</a>. For non-critical repositories it&rsquo;s not a bad idea to use environment variables (for example, if these packages ship with the application).</p>
+<p>We need to create the following user-scoped environment variable:</p>
+<pre tabindex="0"><code>NuGetPackageSourceCredentials_github
+Username=nugetUser;Password=%YOUR_COPIED_TOKEN%
+</code></pre><p><img loading="lazy" src="variable.png" alt="Environment variable"  />
+</p>
+<p>Replace <code>%YOUR_COPIED_TOKEN%</code> with your token. You copied it, didn&rsquo;t you?</p>
+<p>At this point we can consume NuGet packages from GitHub Packages locally. Let&rsquo;s configure the solution build with GitHub Actions.</p>
+<p>To consume the package from GitHub Actions the following <code>YAML</code> file is used:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span><span style="color:#f92672">name</span>: <span style="color:#ae81ff">Build solution</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">on</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">push</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">tags</span>:
+</span></span><span style="display:flex;"><span>    - <span style="color:#ae81ff">v[0-9]+.**</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">jobs</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">build</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">strategy</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">matrix</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">configuration</span>: [<span style="color:#ae81ff">Release]</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">runs-on</span>: <span style="color:#ae81ff">windows-latest</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">permissions</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">contents</span>: <span style="color:#ae81ff">read</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">packages</span>: <span style="color:#ae81ff">read</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">steps</span>:
+</span></span><span style="display:flex;"><span>    - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">Checkout</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">uses</span>: <span style="color:#ae81ff">actions/checkout@v4.2.2</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">with</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">fetch-depth</span>: <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">Install .NET</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">uses</span>: <span style="color:#ae81ff">actions/setup-dotnet@v4.1.0</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">with</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">dotnet-version</span>: <span style="color:#ae81ff">9.0</span><span style="color:#ae81ff">.x</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">Add &#34;github&#34; source </span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">run</span>: <span style="color:#ae81ff">dotnet nuget update source github --username %USERNAME% --password ${{ secrets.GITHUB_TOKEN }} --store-password-in-clear-text</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">Build</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">run</span>: <span style="color:#ae81ff">dotnet build ./src/%APP_NAME%/%APP_NAME%.csproj -c Release</span>
+</span></span></code></pre></div><p>Instead of publication we update source <code>github</code> - we define it in the <code>NuGet.config</code> file earlier.</p>
+<p>For the testing purposes we just build a project. But in the real project this step must be replaced with preparing redistribute packages and so on.</p>
+<p>To use <code>GITHUB_TOKEN</code> we need to allow access of the app repository (the repository that consumes the package) to our package. Open <code>Package Settings</code> and add the app repository to the <code>Manage Actions access</code> list with the <code>read</code> role. For details see the <a href="https://docs.github.com/en/packages/learn-github-packages/configuring-a-packages-access-control-and-visibility#github-actions-access-for-packages-scoped-to-personal-accounts">documentaion</a>.</p>
+<p>This method allows to control the access from one place.</p>
+<p>Also it&rsquo;s possible to use the user token. For this add the token to the repository secrets:</p>
+<p><img loading="lazy" src="repo_token.png" alt="Repository Secrets"  />
+</p>
+<p>And replace <code>GITHUB_TOKEN</code> in the <code>YAML</code> file with your token name.</p>
+<p>In this case the package doesn&rsquo;t control the access - a token gives the access to any package.This is less secure and requires more work to manage tokens. For example, you can&rsquo;t copy a token for a new repository. Just regenerate (and replace it in all repositories that use it) or create a new one every time for each repository.</p>
+<p>That&rsquo;s it.</p>
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+      <li><a href="https://albertakhmetov.com/tags/nuget/">NuGet</a></li>
+      <li><a href="https://albertakhmetov.com/tags/github/">GitHub</a></li>
+    </ul>
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+        <span>&copy; 2024 <a href="https://albertakhmetov.com/">Albert Akhmetov</a></span> · 
+
+    <span>
+        Powered by
+        <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
+        <a href="https://github.com/adityatelange/hugo-PaperMod/" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu')
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = 'copy';
+
+        function copyingDone() {
+            copybutton.innerHTML = 'copied!';
+            setTimeout(() => {
+                copybutton.innerHTML = 'copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+
+        if (container.classList.contains("highlight")) {
+            container.appendChild(copybutton);
+        } else if (container.parentNode.firstChild == container) {
+            
+        } else if (codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName == "TABLE") {
+            
+            codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.appendChild(copybutton);
+        } else {
+            
+            codeblock.parentNode.appendChild(copybutton);
+        }
+    });
+</script>
+</body>
+
+</html>

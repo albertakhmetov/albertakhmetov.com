@@ -6,8 +6,22 @@
     <description>Recent content in Tags on Albert Akhmetov</description>
     <generator>Hugo -- 0.136.5</generator>
     <language>en-us</language>
-    <lastBuildDate>Fri, 22 Nov 2024 13:00:00 +0500</lastBuildDate>
+    <lastBuildDate>Sun, 01 Dec 2024 13:00:00 +0500</lastBuildDate>
     <atom:link href="https://albertakhmetov.com/tags/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>GitHub</title>
+      <link>https://albertakhmetov.com/tags/github/</link>
+      <pubDate>Sun, 01 Dec 2024 13:00:00 +0500</pubDate>
+      <guid>https://albertakhmetov.com/tags/github/</guid>
+      <description></description>
+    </item>
+    <item>
+      <title>NuGet</title>
+      <link>https://albertakhmetov.com/tags/nuget/</link>
+      <pubDate>Sun, 01 Dec 2024 13:00:00 +0500</pubDate>
+      <guid>https://albertakhmetov.com/tags/nuget/</guid>
+      <description></description>
+    </item>
     <item>
       <title>Visual Studio</title>
       <link>https://albertakhmetov.com/tags/visual-studio/</link>
