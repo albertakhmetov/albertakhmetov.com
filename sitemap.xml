@@ -3,7 +3,25 @@
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
     <loc>https://albertakhmetov.com/</loc>
-    <lastmod>2024-12-01T13:00:00+05:00</lastmod>
+    <lastmod>2024-12-08T13:00:00+05:00</lastmod>
+  </url><url>
+    <loc>https://albertakhmetov.com/tags/c%23/</loc>
+    <lastmod>2024-12-08T13:00:00+05:00</lastmod>
+  </url><url>
+    <loc>https://albertakhmetov.com/tags/cswin32/</loc>
+    <lastmod>2024-12-08T13:00:00+05:00</lastmod>
+  </url><url>
+    <loc>https://albertakhmetov.com/posts/</loc>
+    <lastmod>2024-12-08T13:00:00+05:00</lastmod>
+  </url><url>
+    <loc>https://albertakhmetov.com/tags/</loc>
+    <lastmod>2024-12-08T13:00:00+05:00</lastmod>
+  </url><url>
+    <loc>https://albertakhmetov.com/posts/2024/using-windows-natural-order-sorting-in-c%23/</loc>
+    <lastmod>2024-12-08T13:00:00+05:00</lastmod>
+  </url><url>
+    <loc>https://albertakhmetov.com/tags/winapi/</loc>
+    <lastmod>2024-12-08T13:00:00+05:00</lastmod>
   </url><url>
     <loc>https://albertakhmetov.com/tags/github/</loc>
     <lastmod>2024-12-01T13:00:00+05:00</lastmod>
@@ -12,12 +30,6 @@
     <lastmod>2024-12-01T13:00:00+05:00</lastmod>
   </url><url>
     <loc>https://albertakhmetov.com/tags/nuget/</loc>
-    <lastmod>2024-12-01T13:00:00+05:00</lastmod>
-  </url><url>
-    <loc>https://albertakhmetov.com/posts/</loc>
-    <lastmod>2024-12-01T13:00:00+05:00</lastmod>
-  </url><url>
-    <loc>https://albertakhmetov.com/tags/</loc>
     <lastmod>2024-12-01T13:00:00+05:00</lastmod>
   </url><url>
     <loc>https://albertakhmetov.com/tags/visual-studio/</loc>
