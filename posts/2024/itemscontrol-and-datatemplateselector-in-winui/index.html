@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <meta name="robots" content="index, follow">
 <title>ItemsControl and DataTemplateSelector in WinUI | Albert Akhmetov</title>
-<meta name="keywords" content="WinUI, .NET, DataTemplateSelector, ItemsControl">
+<meta name="keywords" content="WinUI, C#, .NET, DataTemplateSelector, ItemsControl">
 <meta name="description" content="Sometimes even simple things can be confusing. Especially if you don&rsquo;t encounter them every day. The funniest thing is if you&rsquo;ve already solved this problem and successfully forgot about it after some time.">
 <meta name="author" content="">
 <link rel="canonical" href="https://albertakhmetov.com/posts/2024/itemscontrol-and-datatemplateselector-in-winui/">
@@ -95,7 +95,7 @@
   "name": "ItemsControl and DataTemplateSelector in WinUI",
   "description": "Sometimes even simple things can be confusing. Especially if you don\u0026rsquo;t encounter them every day. The funniest thing is if you\u0026rsquo;ve already solved this problem and successfully forgot about it after some time.\n",
   "keywords": [
-    "WinUI", ".NET", "DataTemplateSelector", "ItemsControl"
+    "WinUI", "C#", ".NET", "DataTemplateSelector", "ItemsControl"
   ],
   "articleBody": "Sometimes even simple things can be confusing. Especially if you don’t encounter them every day. The funniest thing is if you’ve already solved this problem and successfully forgot about it after some time.\nWith this note I want to create a reminder for myself on how to use DataTemplateSelector in ItemsControl properly.\nThe steps to implement the support for DataTemplateSelector:\nImplement the class that inherits DataTemplateSelector Add properties to store data templates Override two Core methods with template selection logic Add data templates to the resources Add the template selector to the resources (and set data templates) Set ItemTemplateSelector property of ItemsControl Suppose, we need to create a template selector to select a template for the menu item: text item or separator. The following code shows the simple data template selector:\nclass MenuItemTemplateSelector : DataTemplateSelector { public DataTemplate ItemTemplate { get; set; } public DataTemplate SeparatorTemplate { get; set; } // This method isn't invoked. As a result, only the result of .ToString() is shown protected override DataTemplate SelectTemplateCore(object item) { if (item is IconMenuItem menuItem) { return menuItem.Text == \"-\" ? SeparatorTemplate : ItemTemplate; } else { return null; } } // So we also need to implement this method. It solves the problem and the template is selected properly protected override DataTemplate SelectTemplateCore(object item, DependencyObject container) { return SelectTemplateCore(item); } } In the documentation only the first method is implemented. But in this case it’s not called (or is called in special cases that I haven’t found). So we need to implement the second method to make the template selection work.\nOtherwise, everything works as described in the documentation.\nAnd the XAML file is the following:\n",
   "wordCount" : "318",
@@ -137,6 +137,11 @@
             <li>
                 <a href="https://albertakhmetov.com/posts/introduce" title="about me">
                     <span>about me</span>
+                </a>
+            </li>
+            <li>
+                <a href="https://albertakhmetov.com/tags" title="tags">
+                    <span>tags</span>
                 </a>
             </li>
         </ul>
@@ -228,6 +233,7 @@
   <footer class="post-footer">
     <ul class="post-tags">
       <li><a href="https://albertakhmetov.com/tags/winui/">WinUI</a></li>
+      <li><a href="https://albertakhmetov.com/tags/c%23/">C#</a></li>
       <li><a href="https://albertakhmetov.com/tags/.net/">.NET</a></li>
       <li><a href="https://albertakhmetov.com/tags/datatemplateselector/">DataTemplateSelector</a></li>
       <li><a href="https://albertakhmetov.com/tags/itemscontrol/">ItemsControl</a></li>
