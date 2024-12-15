@@ -59,8 +59,8 @@
 <meta property="og:description" content="Five Windows tweaks that make the system more usable (at least for me). The 3rd party apps aren&rsquo;t required. Only (reversible) registry changes." />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://albertakhmetov.com/posts/2024/windows-tweaks/" /><meta property="article:section" content="posts" />
-<meta property="article:published_time" content="2024-12-14T13:00:00+05:00" />
-<meta property="article:modified_time" content="2024-12-14T13:00:00+05:00" />
+<meta property="article:published_time" content="2024-12-15T12:00:00+05:00" />
+<meta property="article:modified_time" content="2024-12-15T12:00:00+05:00" />
 
 <meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="Windows Tweaks"/>
@@ -100,8 +100,8 @@
   "articleBody": "Five Windows tweaks that make the system more usable (at least for me). The 3rd party apps aren’t required. Only (reversible) registry changes.\nImportant notes:\nAll of these tweaks work with Windows 11 Pro 26100.2605. But there are no guarantees for the future releases.\nThese tweaks require to edit the system registry. Do it carefuly and by your own risk!\nRestart the device after tweeks are applied.\nRemove Gallery from File Explorer You can disable a new Gallery pinned icon by the following registry file:\nWindows Registry Editor Version 5.00 [HKEY_CURRENT_USER\\Software\\Classes\\CLSID\\{e88865ea-0e1c-4e20-9aa6-edcd0212c87c}] \"System.IsPinnedToNameSpaceTree\"=dword:00000000 To enable it back use the following registry file:\nWindows Registry Editor Version 5.00 [HKEY_CURRENT_USER\\Software\\Classes\\CLSID\\{e88865ea-0e1c-4e20-9aa6-edcd0212c87c}] \"System.IsPinnedToNameSpaceTree\"=dword:00000001 Remove Home from File Explorer You can disable a new Home pinned icon by the following registry file:\nWindows Registry Editor Version 5.00 [HKEY_CURRENT_USER\\Software\\Classes\\CLSID\\{f874310e-b6b7-47dc-bc84-b9e6b38f5903}] \"System.IsPinnedToNameSpaceTree\"=dword:00000000 Don’t forget to change the File Explorer startup location to This PC.\nTo enable it back use the following registry file:\nWindows Registry Editor Version 5.00 [HKEY_CURRENT_USER\\Software\\Classes\\CLSID\\{f874310e-b6b7-47dc-bc84-b9e6b38f5903}] \"System.IsPinnedToNameSpaceTree\"=dword:00000001 Remove Home from Settings You can disable a new Home Settings page if you don’t find it useful. This can be configured by Group Policy Editor or by the registry.\nGroup Policy Editor (gpedit.msc, available only in Windows 11 Pro):\nSelect Computer Configuration \u003e Administrative Templates \u003e Control Panel;\nOpen Settings Page Visibility settings;\nSet Enabled and print hide:home in the Settings Page Visibility field.\nRegistry file:\nWindows Registry Editor Version 5.00 [HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer] \"SettingsPageVisibility\"=\"hide:home\" To restore settings page just delete SettingsPageVisibility setting.\nRemove web search from Windows Search You can disable Bing search and limit the search to local files. To do this, use the following registry file:\nWindows Registry Editor Version 5.00 [HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Search] \"BingSearchEnabled\"=dword:00000000 \"AllowSearchToUseLocation\"=dword:00000000 \"CortanaConsent\"=dword:00000000 Fix Mouse Pointer Disappearing in Chrome/Edge Sometimes the cursor may disappear in Chromium-based browsers. The following tweak may solve this problem:\nWindows Registry Editor Version 5.00 [HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\Dwm] \"OverlayTestMode\"=dword:00000005 Note: backup your the registry value before applying this tweak.\nOne more thing If you swipe from the edge on touchscreen devices, you’ll see widgets, notifications, etc. I find it annoying. To disable edge swiping use the following group policy:\nSelect Computer Configuration \u003e Administrative Templates \u003e Windows Components \u003e Edge UI;\nOpen Allow edge swap settings;\nSet Disabled.\n",
   "wordCount" : "365",
   "inLanguage": "en",
-  "datePublished": "2024-12-14T13:00:00+05:00",
-  "dateModified": "2024-12-14T13:00:00+05:00",
+  "datePublished": "2024-12-15T12:00:00+05:00",
+  "dateModified": "2024-12-15T12:00:00+05:00",
   "mainEntityOfPage": {
     "@type": "WebPage",
     "@id": "https://albertakhmetov.com/posts/2024/windows-tweaks/"
@@ -155,7 +155,7 @@
     <h1 class="post-title entry-hint-parent">
       Windows Tweaks
     </h1>
-    <div class="post-meta"><span title='2024-12-14 13:00:00 +0500 +05'>December 14, 2024</span>
+    <div class="post-meta"><span title='2024-12-15 12:00:00 +0500 +05'>December 15, 2024</span>
 
 </div>
   </header> 
