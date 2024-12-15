@@ -6,8 +6,15 @@
     <description>Recent content on Albert Akhmetov</description>
     <generator>Hugo -- 0.136.5</generator>
     <language>en-us</language>
-    <lastBuildDate>Sun, 08 Dec 2024 13:00:00 +0500</lastBuildDate>
+    <lastBuildDate>Sat, 14 Dec 2024 13:00:00 +0500</lastBuildDate>
     <atom:link href="https://albertakhmetov.com/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Windows Tweaks</title>
+      <link>https://albertakhmetov.com/posts/2024/windows-tweaks/</link>
+      <pubDate>Sat, 14 Dec 2024 13:00:00 +0500</pubDate>
+      <guid>https://albertakhmetov.com/posts/2024/windows-tweaks/</guid>
+      <description>&lt;p&gt;Five Windows tweaks that make the system more usable (at least for me). The 3rd party apps aren&amp;rsquo;t required. Only (reversible) registry changes.&lt;/p&gt;</description>
+    </item>
     <item>
       <title>Using Windows natural order sorting in C#</title>
       <link>https://albertakhmetov.com/posts/2024/using-windows-natural-order-sorting-in-c%23/</link>

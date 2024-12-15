@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>Windows on Albert Akhmetov</title>
+    <link>https://albertakhmetov.com/tags/windows/</link>
+    <description>Recent content in Windows on Albert Akhmetov</description>
+    <generator>Hugo -- 0.136.5</generator>
+    <language>en-us</language>
+    <lastBuildDate>Sat, 14 Dec 2024 13:00:00 +0500</lastBuildDate>
+    <atom:link href="https://albertakhmetov.com/tags/windows/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Windows Tweaks</title>
+      <link>https://albertakhmetov.com/posts/2024/windows-tweaks/</link>
+      <pubDate>Sat, 14 Dec 2024 13:00:00 +0500</pubDate>
+      <guid>https://albertakhmetov.com/posts/2024/windows-tweaks/</guid>
+      <description>&lt;p&gt;Five Windows tweaks that make the system more usable (at least for me). The 3rd party apps aren&amp;rsquo;t required. Only (reversible) registry changes.&lt;/p&gt;</description>
+    </item>
+  </channel>
+</rss>
