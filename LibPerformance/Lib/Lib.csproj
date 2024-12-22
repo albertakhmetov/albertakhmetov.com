@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <PropertyGroup>
+	<Copyright>© 2024, Albert Akhmetov</Copyright>
+	<Authors>Albert Akhmetov</Authors>
+	<Product>Lib</Product>
+	<PackageId>Lib</PackageId>
+	<Version>0.1.0-alpha1</Version>
+  </PropertyGroup>
+
+</Project>
