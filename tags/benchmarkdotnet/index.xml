@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>BenchmarkDotNet on Albert Akhmetov</title>
+    <link>https://albertakhmetov.com/tags/benchmarkdotnet/</link>
+    <description>Recent content in BenchmarkDotNet on Albert Akhmetov</description>
+    <generator>Hugo -- 0.136.5</generator>
+    <language>en-us</language>
+    <lastBuildDate>Sun, 22 Dec 2024 12:00:00 +0500</lastBuildDate>
+    <atom:link href="https://albertakhmetov.com/tags/benchmarkdotnet/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>How to compare the performance of different versions of the same library</title>
+      <link>https://albertakhmetov.com/posts/2024/how-to-compare-the-performance-of-different-versions-of-the-same-library/</link>
+      <pubDate>Sun, 22 Dec 2024 12:00:00 +0500</pubDate>
+      <guid>https://albertakhmetov.com/posts/2024/how-to-compare-the-performance-of-different-versions-of-the-same-library/</guid>
+      <description>&lt;p&gt;In this note I&amp;rsquo;ll show how to use &lt;a href=&#34;https://benchmarkdotnet.org/&#34;&gt;BenchmarkDotNet&lt;/a&gt; to compare the performance of different versions of the same library.&lt;/p&gt;</description>
+    </item>
+  </channel>
+</rss>

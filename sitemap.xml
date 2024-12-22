@@ -2,14 +2,26 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
+    <loc>https://albertakhmetov.com/tags/.net/</loc>
+    <lastmod>2024-12-22T12:00:00+05:00</lastmod>
+  </url><url>
     <loc>https://albertakhmetov.com/</loc>
-    <lastmod>2024-12-15T12:00:00+05:00</lastmod>
+    <lastmod>2024-12-22T12:00:00+05:00</lastmod>
+  </url><url>
+    <loc>https://albertakhmetov.com/tags/benchmarkdotnet/</loc>
+    <lastmod>2024-12-22T12:00:00+05:00</lastmod>
+  </url><url>
+    <loc>https://albertakhmetov.com/tags/c%23/</loc>
+    <lastmod>2024-12-22T12:00:00+05:00</lastmod>
+  </url><url>
+    <loc>https://albertakhmetov.com/posts/2024/how-to-compare-the-performance-of-different-versions-of-the-same-library/</loc>
+    <lastmod>2024-12-22T12:00:00+05:00</lastmod>
   </url><url>
     <loc>https://albertakhmetov.com/posts/</loc>
-    <lastmod>2024-12-15T12:00:00+05:00</lastmod>
+    <lastmod>2024-12-22T12:00:00+05:00</lastmod>
   </url><url>
     <loc>https://albertakhmetov.com/tags/</loc>
-    <lastmod>2024-12-15T12:00:00+05:00</lastmod>
+    <lastmod>2024-12-22T12:00:00+05:00</lastmod>
   </url><url>
     <loc>https://albertakhmetov.com/tags/tweaks/</loc>
     <lastmod>2024-12-15T12:00:00+05:00</lastmod>
@@ -19,12 +31,6 @@
   </url><url>
     <loc>https://albertakhmetov.com/posts/2024/windows-tweaks/</loc>
     <lastmod>2024-12-15T12:00:00+05:00</lastmod>
-  </url><url>
-    <loc>https://albertakhmetov.com/tags/.net/</loc>
-    <lastmod>2024-12-08T13:00:00+05:00</lastmod>
-  </url><url>
-    <loc>https://albertakhmetov.com/tags/c%23/</loc>
-    <lastmod>2024-12-08T13:00:00+05:00</lastmod>
   </url><url>
     <loc>https://albertakhmetov.com/tags/cswin32/</loc>
     <lastmod>2024-12-08T13:00:00+05:00</lastmod>
