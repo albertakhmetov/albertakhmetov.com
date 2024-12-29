@@ -1,26 +1,19 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
   <channel>
-    <title>WinAPI on Albert Akhmetov</title>
-    <link>https://albertakhmetov.com/tags/winapi/</link>
-    <description>Recent content in WinAPI on Albert Akhmetov</description>
+    <title>ICO on Albert Akhmetov</title>
+    <link>https://albertakhmetov.com/tags/ico/</link>
+    <description>Recent content in ICO on Albert Akhmetov</description>
     <generator>Hugo -- 0.136.5</generator>
     <language>en-us</language>
     <lastBuildDate>Sun, 29 Dec 2024 12:00:00 +0500</lastBuildDate>
-    <atom:link href="https://albertakhmetov.com/tags/winapi/index.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="https://albertakhmetov.com/tags/ico/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>How to extract a specific image from the icon file</title>
       <link>https://albertakhmetov.com/posts/2024/how-to-extract-a-specific-image-from-an-icon-file/</link>
       <pubDate>Sun, 29 Dec 2024 12:00:00 +0500</pubDate>
       <guid>https://albertakhmetov.com/posts/2024/how-to-extract-a-specific-image-from-an-icon-file/</guid>
       <description>&lt;p&gt;In this note we are considering the image extraction from ICO files using the Win32 API.&lt;/p&gt;</description>
-    </item>
-    <item>
-      <title>Using Windows natural order sorting in C#</title>
-      <link>https://albertakhmetov.com/posts/2024/using-windows-natural-order-sorting-in-c%23/</link>
-      <pubDate>Sun, 08 Dec 2024 13:00:00 +0500</pubDate>
-      <guid>https://albertakhmetov.com/posts/2024/using-windows-natural-order-sorting-in-c%23/</guid>
-      <description>&lt;p&gt;Windows Explorer sorts files with digits in a more natural way than build-in C# functions. It&amp;rsquo;s possible to use this sorting method in any app for Windows.&lt;/p&gt;</description>
     </item>
   </channel>
 </rss>

@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>How to extract a specific image from the icon file | Albert Akhmetov</title>
+<meta name="keywords" content="How to extract a specific image from the icon file, ICO files, extract images from ICO files">
+<meta name="description" content="In this note we are considering the image extraction from ICO files using the Win32 API.">
+<meta name="author" content="">
+<link rel="canonical" href="https://albertakhmetov.com/posts/2024/how-to-extract-a-specific-image-from-an-icon-file/">
+<link crossorigin="anonymous" href="/assets/css/stylesheet.css" rel="preload stylesheet" as="style">
+<link rel="icon" href="https://albertakhmetov.com/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="https://albertakhmetov.com/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://albertakhmetov.com/favicon-32x32.png">
+<link rel="apple-touch-icon" href="https://albertakhmetov.com/apple-touch-icon.png">
+<link rel="mask-icon" href="https://albertakhmetov.com/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<link rel="alternate" hreflang="en" href="https://albertakhmetov.com/posts/2024/how-to-extract-a-specific-image-from-an-icon-file/">
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --code-block-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-track {
+                background: 0 0;
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-thumb {
+                border-color: var(--theme);
+            }
+        }
+
+    </style>
+</noscript><meta property="og:title" content="How to extract a specific image from the icon file" />
+<meta property="og:description" content="In this note we are considering the image extraction from ICO files using the Win32 API." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://albertakhmetov.com/posts/2024/how-to-extract-a-specific-image-from-an-icon-file/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2024-12-29T12:00:00+05:00" />
+<meta property="article:modified_time" content="2024-12-29T12:00:00+05:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="How to extract a specific image from the icon file"/>
+<meta name="twitter:description" content="In this note we are considering the image extraction from ICO files using the Win32 API."/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Posts",
+      "item": "https://albertakhmetov.com/posts/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "How to extract a specific image from the icon file",
+      "item": "https://albertakhmetov.com/posts/2024/how-to-extract-a-specific-image-from-an-icon-file/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "How to extract a specific image from the icon file",
+  "name": "How to extract a specific image from the icon file",
+  "description": "In this note we are considering the image extraction from ICO files using the Win32 API.\n",
+  "keywords": [
+    "How to extract a specific image from the icon file", "ICO files", "extract images from ICO files"
+  ],
+  "articleBody": "In this note we are considering the image extraction from ICO files using the Win32 API.\nThe ICO file is a container which contains images of a different size and color depth. Icon class allows to load only one image from the ICO file. When the image size is set the algorithm tries to select a more appropriated image from the ICO file.\nTo extract a specific image from the ICO file CreateIconFromResourceEx function is used.\nAll that we need is to provide the proper resource bits from the ICO file. To find these bits let’s look at the structure of the ICO file.\nThe ICO file starts with the fixed header:\npublic struct ICONDIR { public ushort idReserved; // Reserved (must be 0) public ushort idType; // Resource Type (1 for icons) public ushort idCount; // The total number of images public ICONDIRENTRY[] idEntries; // An entry for each image }; We need only idCount field and to know that the header size is 6 bytes (3 times ushort).\nEach entry has the following structure:\npublic struct ICONDIRENTRY { public byte bWidth; // Width of the image public byte bHeight; // Height of the image public byte bColorCount; // Number of colors in the image (0 if \u003e= 8bpp) public byte bReserved; // Reserved (must be 0) public ushort wPlanes; // Color Planes public ushort wBitCount; // Bits per pixel public uint dwBytesInRes; // The total size of the image public uint dwImageOffset; // The position of the image }; The size of this stucture is 16 bytes. We need dwBytesInRes and dwImageOffset fields.\nThese structures are followed by the images data. From this data we need to extract image bits and pass them to CreateIconFromResourceEx function.\nSuppose that we read the entire ICO file to the buffer:\nusing var stream = File.OpenRead(fileName); var length = (int)stream.Length; var array = ArrayPool\u003cbyte\u003e.Shared.Rent(length); try { var buffer = array.AsSpan(0, length); stream.ReadExactly(buffer); ExtractFrames(buffer, outputDirectory); } finally { ArrayPool\u003cbyte\u003e.Shared.Return(array); } void ExtractFrames(Span\u003cbyte\u003e buffer, string outputDirectory) { var framesCount = GetFramesCount(buffer); for (var i = 0; i \u003c framesCount; i++) { using var bitmap = GetFrame(buffer, i); bitmap.Save(Path.Combine(outputDirectory, $\"{i}.png\"), System.Drawing.Imaging.ImageFormat.Png); } } To get the total number of images we need to read a couple of bytes from the buffer (see the ICONDIR structure):\nint GetFramesCount(Span\u003cbyte\u003e buffer) { return BitConverter.ToUInt16(buffer.Slice(sizeof(ushort) * 2, sizeof(ushort))); } Since each directory entry has the same size (16 bytes), we can get a buffer for any entry. From this buffer we can extract dwBytesInRes and dwImageOffset fields (see the ICONDIRENTRY structure).\nThe final version of GetFrame method is the following:\nBitmap GetFrame(Span\u003cbyte\u003e buffer, int frameId) { const int ICON_DIR_SIZE = 6; const int ICON_DIR_ENTRY_SIZE = 16; var entryBuffer = buffer .Slice(ICON_DIR_SIZE) .Slice(ICON_DIR_ENTRY_SIZE * frameId, ICON_DIR_ENTRY_SIZE); int pos = BitConverter.ToInt32(entryBuffer.Slice(ICON_DIR_ENTRY_SIZE - sizeof(uint), sizeof(uint))); int length = BitConverter.ToInt32(entryBuffer.Slice(ICON_DIR_ENTRY_SIZE - sizeof(uint) * 2, sizeof(uint))); using var handle = Windows.Win32.PInvoke.CreateIconFromResourceEx( buffer.Slice(pos, length), new Windows.Win32.Foundation.BOOL(true), 0x00030000, 0, 0, 0); using var icon = Icon.FromHandle(handle.DangerousGetHandle()); return icon.ToBitmap(); } I use C#/Win32 P/Invoke Source Generator so we need to add the reference to the NuGet package and add NativeMethods.txt with CreateIconFromResourceEx function. Also this method uses System.Drawing.Common. We need to add the reference to it too. The sample code is available here.\nDon’t forget that System.Drawing.Common package works only on Windows! Of course, in this case cross-platforming is pointless, since we use the system function CreateIconFromResourceEx. But it’s just a friendly reminder.\nThere is another way to extract images from ICO files without using Windows-specific functions. We’ll consider it in the next note.\n",
+  "wordCount" : "587",
+  "inLanguage": "en",
+  "datePublished": "2024-12-29T12:00:00+05:00",
+  "dateModified": "2024-12-29T12:00:00+05:00",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://albertakhmetov.com/posts/2024/how-to-extract-a-specific-image-from-an-icon-file/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Albert Akhmetov",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://albertakhmetov.com/favicon.ico"
+    }
+  }
+}
+</script>
+</head>
+
+<body class="" id="top">
+<script>
+    if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark');
+    }
+
+</script>
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="https://albertakhmetov.com/" accesskey="h" title="Albert Akhmetov (Alt + H)">Albert Akhmetov</a>
+            <div class="logo-switches">
+            </div>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="https://albertakhmetov.com/posts/introduce" title="about me">
+                    <span>about me</span>
+                </a>
+            </li>
+            <li>
+                <a href="https://albertakhmetov.com/tags" title="tags">
+                    <span>tags</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    
+    <h1 class="post-title entry-hint-parent">
+      How to extract a specific image from the icon file
+    </h1>
+    <div class="post-meta"><span title='2024-12-29 12:00:00 +0500 +05'>December 29, 2024</span>
+
+</div>
+  </header> 
+  <div class="post-content"><p>In this note we are considering the image extraction from ICO files using the Win32 API.</p>
+<p>The ICO file is a container which contains images of a different size and color depth. <a href="https://learn.microsoft.com/en-us/dotnet/api/system.drawing.icon?view=windowsdesktop-9.0"><code>Icon</code></a> class allows to load only one image from the ICO file. When the image size is set the algorithm tries to select a more appropriated image from the ICO file.</p>
+<p>To extract a specific image from the ICO file <a href="https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-createiconfromresourceex"><code>CreateIconFromResourceEx</code></a> function is used.</p>
+<p>All that we need is to provide the proper resource bits from the ICO file. To find these bits let&rsquo;s look at the structure of the ICO file.</p>
+<p>The ICO file starts with the fixed header:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C#" data-lang="C#"><span style="display:flex;"><span><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">ICONDIR</span>
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">ushort</span> idReserved;          <span style="color:#75715e">// Reserved (must be 0)</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">ushort</span> idType;              <span style="color:#75715e">// Resource Type (1 for icons)</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">ushort</span> idCount;             <span style="color:#75715e">// The total number of images</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> ICONDIRENTRY[] idEntries;   <span style="color:#75715e">// An entry for each image</span>
+</span></span><span style="display:flex;"><span>};
+</span></span></code></pre></div><p>We need only <code>idCount</code> field and to know that the header size is 6 bytes (3 times <code>ushort</code>).</p>
+<p>Each entry has the following structure:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C#" data-lang="C#"><span style="display:flex;"><span><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">ICONDIRENTRY</span>
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">byte</span> bWidth;          <span style="color:#75715e">// Width of the image</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">byte</span> bHeight;         <span style="color:#75715e">// Height of the image</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">byte</span> bColorCount;     <span style="color:#75715e">// Number of colors in the image (0 if &gt;= 8bpp)</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">byte</span> bReserved;       <span style="color:#75715e">// Reserved (must be 0)</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">ushort</span> wPlanes;       <span style="color:#75715e">// Color Planes</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">ushort</span> wBitCount;     <span style="color:#75715e">// Bits per pixel</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">uint</span> dwBytesInRes;    <span style="color:#75715e">// The total size of the image</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">uint</span> dwImageOffset;   <span style="color:#75715e">// The position of the image</span>
+</span></span><span style="display:flex;"><span>};
+</span></span></code></pre></div><p>The size of this stucture is 16 bytes. We need <code>dwBytesInRes</code> and <code>dwImageOffset</code> fields.</p>
+<p>These structures are followed by the images data. From this data we need to extract image bits and pass them to <code>CreateIconFromResourceEx</code> function.</p>
+<p>Suppose that we read the entire ICO file to the buffer:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C#" data-lang="C#"><span style="display:flex;"><span><span style="color:#66d9ef">using</span> var stream = File.OpenRead(fileName);
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">var</span> length = (<span style="color:#66d9ef">int</span>)stream.Length;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">var</span> array = ArrayPool&lt;<span style="color:#66d9ef">byte</span>&gt;.Shared.Rent(length);
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">try</span>
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">var</span> buffer = array.AsSpan(<span style="color:#ae81ff">0</span>, length);
+</span></span><span style="display:flex;"><span>    stream.ReadExactly(buffer);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    ExtractFrames(buffer, outputDirectory);
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">finally</span>
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    ArrayPool&lt;<span style="color:#66d9ef">byte</span>&gt;.Shared.Return(array);
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">void</span> ExtractFrames(Span&lt;<span style="color:#66d9ef">byte</span>&gt; buffer, <span style="color:#66d9ef">string</span> outputDirectory)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">var</span> framesCount = GetFramesCount(buffer);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">for</span> (<span style="color:#66d9ef">var</span> i = <span style="color:#ae81ff">0</span>; i &lt; framesCount; i++)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">using</span> var bitmap = GetFrame(buffer, i);
+</span></span><span style="display:flex;"><span>        bitmap.Save(Path.Combine(outputDirectory, <span style="color:#e6db74">$&#34;{i}.png&#34;</span>), System.Drawing.Imaging.ImageFormat.Png);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>To get the total number of images we need to read a couple of bytes from the buffer (see the <code>ICONDIR</code> structure):</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C#" data-lang="C#"><span style="display:flex;"><span><span style="color:#66d9ef">int</span> GetFramesCount(Span&lt;<span style="color:#66d9ef">byte</span>&gt; buffer)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> BitConverter.ToUInt16(buffer.Slice(<span style="color:#66d9ef">sizeof</span>(<span style="color:#66d9ef">ushort</span>) * <span style="color:#ae81ff">2</span>, <span style="color:#66d9ef">sizeof</span>(<span style="color:#66d9ef">ushort</span>)));
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>Since each directory entry has the same size (16 bytes), we can get a buffer for any entry. From this buffer we can extract <code>dwBytesInRes</code> and <code>dwImageOffset</code> fields (see the <code>ICONDIRENTRY</code> structure).</p>
+<p>The final version of <code>GetFrame</code> method is the following:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C#" data-lang="C#"><span style="display:flex;"><span>Bitmap GetFrame(Span&lt;<span style="color:#66d9ef">byte</span>&gt; buffer, <span style="color:#66d9ef">int</span> frameId)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">const</span> <span style="color:#66d9ef">int</span> ICON_DIR_SIZE = <span style="color:#ae81ff">6</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">const</span> <span style="color:#66d9ef">int</span> ICON_DIR_ENTRY_SIZE = <span style="color:#ae81ff">16</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">var</span> entryBuffer = buffer
+</span></span><span style="display:flex;"><span>        .Slice(ICON_DIR_SIZE)
+</span></span><span style="display:flex;"><span>        .Slice(ICON_DIR_ENTRY_SIZE * frameId, ICON_DIR_ENTRY_SIZE);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">int</span> pos = BitConverter.ToInt32(entryBuffer.Slice(ICON_DIR_ENTRY_SIZE - <span style="color:#66d9ef">sizeof</span>(<span style="color:#66d9ef">uint</span>), <span style="color:#66d9ef">sizeof</span>(<span style="color:#66d9ef">uint</span>)));
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">int</span> length = BitConverter.ToInt32(entryBuffer.Slice(ICON_DIR_ENTRY_SIZE - <span style="color:#66d9ef">sizeof</span>(<span style="color:#66d9ef">uint</span>) * <span style="color:#ae81ff">2</span>, <span style="color:#66d9ef">sizeof</span>(<span style="color:#66d9ef">uint</span>)));
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">using</span> var handle = Windows.Win32.PInvoke.CreateIconFromResourceEx(
+</span></span><span style="display:flex;"><span>        buffer.Slice(pos, length),
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">new</span> Windows.Win32.Foundation.BOOL(<span style="color:#66d9ef">true</span>),
+</span></span><span style="display:flex;"><span>        <span style="color:#ae81ff">0x00030000</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#ae81ff">0</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#ae81ff">0</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#ae81ff">0</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">using</span> var icon = Icon.FromHandle(handle.DangerousGetHandle());
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> icon.ToBitmap();
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>I use <a href="https://github.com/microsoft/CsWin32">C#/Win32 P/Invoke Source Generator</a> so we need to add the reference to the NuGet package and add <code>NativeMethods.txt</code> with <code>CreateIconFromResourceEx</code> function. Also this method uses <a href="https://www.nuget.org/packages/System.Drawing.Common/"><code>System.Drawing.Common</code></a>. We need to add the reference to it too. The sample code is available <a href="https://github.com/albertakhmetov/albertakhmetov.com/tree/main/IcoExtractor">here</a>.</p>
+<p>Don&rsquo;t forget that <code>System.Drawing.Common</code> package works only on Windows! Of course, in this case cross-platforming is pointless, since we use the system function <code>CreateIconFromResourceEx</code>. But it&rsquo;s just a friendly reminder.</p>
+<p>There is another way to extract images from ICO files without using Windows-specific functions. We&rsquo;ll consider it in the next note.</p>
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+      <li><a href="https://albertakhmetov.com/tags/c%23/">C#</a></li>
+      <li><a href="https://albertakhmetov.com/tags/.net/">.NET</a></li>
+      <li><a href="https://albertakhmetov.com/tags/winapi/">WinAPI</a></li>
+      <li><a href="https://albertakhmetov.com/tags/ico/">ICO</a></li>
+    </ul>
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+        <span>&copy; 2024 <a href="https://albertakhmetov.com/">Albert Akhmetov</a></span> · 
+
+    <span>
+        Powered by
+        <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
+        <a href="https://github.com/adityatelange/hugo-PaperMod/" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu')
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = 'copy';
+
+        function copyingDone() {
+            copybutton.innerHTML = 'copied!';
+            setTimeout(() => {
+                copybutton.innerHTML = 'copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+
+        if (container.classList.contains("highlight")) {
+            container.appendChild(copybutton);
+        } else if (container.parentNode.firstChild == container) {
+            
+        } else if (codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName == "TABLE") {
+            
+            codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.appendChild(copybutton);
+        } else {
+            
+            codeblock.parentNode.appendChild(copybutton);
+        }
+    });
+</script>
+</body>
+
+</html>

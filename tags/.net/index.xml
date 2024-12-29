@@ -6,8 +6,15 @@
     <description>Recent content in .NET on Albert Akhmetov</description>
     <generator>Hugo -- 0.136.5</generator>
     <language>en-us</language>
-    <lastBuildDate>Sun, 22 Dec 2024 12:00:00 +0500</lastBuildDate>
+    <lastBuildDate>Sun, 29 Dec 2024 12:00:00 +0500</lastBuildDate>
     <atom:link href="https://albertakhmetov.com/tags/.net/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>How to extract a specific image from the icon file</title>
+      <link>https://albertakhmetov.com/posts/2024/how-to-extract-a-specific-image-from-an-icon-file/</link>
+      <pubDate>Sun, 29 Dec 2024 12:00:00 +0500</pubDate>
+      <guid>https://albertakhmetov.com/posts/2024/how-to-extract-a-specific-image-from-an-icon-file/</guid>
+      <description>&lt;p&gt;In this note we are considering the image extraction from ICO files using the Win32 API.&lt;/p&gt;</description>
+    </item>
     <item>
       <title>How to compare the performance of different versions of the same library</title>
       <link>https://albertakhmetov.com/posts/2024/how-to-compare-the-performance-of-different-versions-of-the-same-library/</link>
