@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>How to extract a specific image from the icon file. Pure C# | Albert Akhmetov</title>
+<meta name="keywords" content="How to extract a specific image from the icon file in C#, ICO files, extract images from ICO files">
+<meta name="description" content="In this note we are considering the image extraction from ICO files in pure C# (without Win32 or any other dependencies).">
+<meta name="author" content="">
+<link rel="canonical" href="https://albertakhmetov.com/posts/2025/how-to-extract-a-specific-image-from-an-icon-file.-pure-c%23/">
+<link crossorigin="anonymous" href="/assets/css/stylesheet.css" rel="preload stylesheet" as="style">
+<link rel="icon" href="https://albertakhmetov.com/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="https://albertakhmetov.com/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://albertakhmetov.com/favicon-32x32.png">
+<link rel="apple-touch-icon" href="https://albertakhmetov.com/apple-touch-icon.png">
+<link rel="mask-icon" href="https://albertakhmetov.com/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<link rel="alternate" hreflang="en" href="https://albertakhmetov.com/posts/2025/how-to-extract-a-specific-image-from-an-icon-file.-pure-c%23/">
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --code-block-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-track {
+                background: 0 0;
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-thumb {
+                border-color: var(--theme);
+            }
+        }
+
+    </style>
+</noscript><meta property="og:title" content="How to extract a specific image from the icon file. Pure C#" />
+<meta property="og:description" content="In this note we are considering the image extraction from ICO files in pure C# (without Win32 or any other dependencies)." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://albertakhmetov.com/posts/2025/how-to-extract-a-specific-image-from-an-icon-file.-pure-c%23/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2025-01-05T12:00:00+05:00" />
+<meta property="article:modified_time" content="2025-01-05T12:00:00+05:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="How to extract a specific image from the icon file. Pure C#"/>
+<meta name="twitter:description" content="In this note we are considering the image extraction from ICO files in pure C# (without Win32 or any other dependencies)."/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Posts",
+      "item": "https://albertakhmetov.com/posts/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "How to extract a specific image from the icon file. Pure C#",
+      "item": "https://albertakhmetov.com/posts/2025/how-to-extract-a-specific-image-from-an-icon-file.-pure-c%23/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "How to extract a specific image from the icon file. Pure C#",
+  "name": "How to extract a specific image from the icon file. Pure C#",
+  "description": "In this note we are considering the image extraction from ICO files in pure C# (without Win32 or any other dependencies).\n",
+  "keywords": [
+    "How to extract a specific image from the icon file in C#", "ICO files", "extract images from ICO files"
+  ],
+  "articleBody": "In this note we are considering the image extraction from ICO files in pure C# (without Win32 or any other dependencies).\nThe ICO file is a container which contains images of a different size and color depth.\nThe file header has the following data:\nOffset Size Description 0 2 Reserved; it must be 0 2 2 The type: it muse be 1 for icons 4 2 The number of images in the file Then the array of ico directory entities follows:\nOffset Size Description 0 1 The image width; 0 value is used for 256 1 1 The image height; 0 value is used for 256 2 1 The number of colors in the palette; 0 if the image doesn’t use a palette. 3 1 Reserved. Must be 0 4 2 The number of planes 6 2 The number of bits per pixel 8 4 The size of the image data (in bytes) 12 4 The offset of the image data from the beginning of the file To obtain the position and size of the image data we need to parse the last two values (entryBuffer - the byte array of the whole ICO file):\n// extract the position and length of the content int pos = BitConverter.ToInt32(entryBuffer[(ICON_DIR_ENTRY_SIZE - sizeof(uint))..]); int length = BitConverter.ToInt32(entryBuffer[(ICON_DIR_ENTRY_SIZE - sizeof(uint) * 2)..]); The image can be in two formats: PNG or bitmap. In the case of PNG we can simply extract data by the offset and save to the file:\n// check the PNG signature if (IsPng(contentBuffer)) { // save the PNG file using var outputStream = File.Create(Path.Combine(outputDirectory, \"image.png\")); outputStream.Write(contentBuffer); } // Checks if the buffer contains PNG image bool IsPng(Span\u003cbyte\u003e buffer) { long PngSignature = BitConverter.ToInt64(new byte[] { (byte)0x89, (byte)0x50, (byte)0x4e, (byte)0x47, (byte)0x0d, (byte)0x0a, (byte)0x1a, (byte)0x0a }); return buffer.Length \u003e sizeof(long) \u0026\u0026 BitConverter.ToInt64(buffer[..sizeof(long)]) == PngSignature; } The bitmap case is more complex. First of all, the bitmap is stored without a file header. That means we can’t save it as it is. The image consists of two pixel arrays - the original image and the transparency bitmask. The icon image is their product. It’s important for indexed bitmaps (bit count \u003c 24), less important for 24 bit bitmaps (without a mask we lose the transparency) and it doesn’t matter for 32 bit bitmaps (some tools even add a solid bitmask to these images; but that’s wrong). And the last (but not the least) - it’s height. The height of the image is twice as large (due to the bitmask).\nAs an ICO bitmap doesn’t have a file header, the image data starts with the bitmap header. BITMAPINFOHEADER is used:\nOffset Size Description 0 4 The header size in bytes; it equals 40. 4 4 The bitmap width (in pixels) 8 4 The bitmap height (in pixels) 12 2 The number of planes for the target device; it must be 1 14 2 The number of bits per pixel 16 4 The image compression method; for icons BI_RGB (0) or BI_BITFIELDS (3) is used 20 4 The size of the image (in bytes); it can be set to 0 for uncompressed RGB bitmaps 24 4 The image horizontal resolution (in pixel per meter) 28 4 The image vertical resolution (in pixel per meter) 32 4 The number of colors in the palette; if 0 it’s calculated in the following way: 1 « BitCount 36 4 The number of important colors is used, or 0 when every color is important This code loads the required information from the header:\n// note: we divide height by 2 Height = BitConverter.ToInt32(buffer[BITMAP_HEADER_HEIGHT..]) / 2; Width = BitConverter.ToInt32(buffer[BITMAP_HEADER_WIDTH..]); BitCount = BitConverter.ToInt16(buffer[BITMAP_HEADER_BIT_COUNT..]); // Check the color count var colorCount = BitConverter.ToInt32(buffer[BITMAP_HEADER_COLORS..]); For indexed bitmaps (bit count \u003c 16) the color table follows the bitmap header. The color table is an array of uint values. The total number of these values is set by colorCount from the header or in the following way:\nif (colorCount == 0) { colorCount = BitCount \u003c= 8 ? (1 \u003c\u003c BitCount) : 0; } The color table is only used for indexed bitmaps (bit count \u003c= 8); otherwise this section is omitted.\nTo parse the color table the following code is used:\nvar colorTableLength = colorCount * sizeof(uint); var colorTable = colorTableLength == 0 ? [] : ParseColorTable(buffer.Slice(BITMAP_INFO_HEADER_SIZE, colorTableLength)); uint[] ParseColorTable(Span\u003cbyte\u003e buffer) { var colorTableLength = buffer.Length / sizeof(uint); var pos = 0; var colorTable = new uint[colorTableLength]; for (var i = 0; i \u003c colorTable.Length; i++) { var b = buffer[pos++]; var g = buffer[pos++]; var r = buffer[pos++]; var a = buffer[pos++]; colorTable[i] = (uint) (0xFFFFFFFF \u0026 (a \u003c\u003c 24 | r \u003c\u003c 16 | g \u003c\u003c 8 | b)); } return colorTable; } The structure of the pixel array depends on the bit count property. For indexed bitmap you need to read data bit by bit and then get the value from the color table. 24 (32 bit) bitmap stores its pixels as 3 (4) bytes sequence.\nThe following code shows how to parse a pixel array for 32 or 24 bits bitmaps (the case of 16 bit bitmap is omitted):\nvar pixels = ParsePixels(Width, Height, BitCount == 32, buffer[BITMAP_INFO_HEADER_SIZE..]); uint[] ParsePixels(int width, int height, bool hasAlpha, Span\u003cbyte\u003e pixelBuffer) { var pixels = new uint[width * height]; var pos = 0; for (var y = height; y \u003e 0; y--) { for (var x = 0; x \u003c width; x++) { var b = pixelBuffer[pos++]; // blue var g = pixelBuffer[pos++]; // green var r = pixelBuffer[pos++]; // red if (hasAlpha) { var a = pixelBuffer[pos++]; // alpha pixels[width * (y - 1) + x] = (uint) (0xFFFFFFFF \u0026 (a \u003c\u003c 24 | r \u003c\u003c 16 | g \u003c\u003c 8 | b)); } else { pixels[width * (y - 1) + x] = (uint) (0xFFFFFFFF \u0026 ((r + b + g == 0 ? 0 : 255) \u003c\u003c 24 | r \u003c\u003c 16 | g \u003c\u003c 8 | b)); } } } return pixels; } In case of indexed images a new concept is introduced: the row length of the pixel array must be aligned to 4 bytes. The row width is calculated in the following way:\nint GetStride(int width, int bitCount) { return (((width * bitCount) + 31) \u0026 ~31) \u003e\u003e 3; } To calculate the distance to the end of the row you can use the following function:\nint GetPaddingBytes(int width, int bitCount) { return GetStride(width, bitCount) - Convert.ToInt32(Math.Ceiling(width * bitCount / 8.0)); } The following code loads values from the buffer bit by bit:\nvoid ReadBits(int width, int height, int bitCount, Span\u003cbyte\u003e buffer, Span\u003cbyte\u003e data) { var pos = 0; var x = 0; var y = height; var paddingBytes = GetPaddingBytes(width, bitCount); var b = buffer[pos++]; var bPos = 0; do { var mask = (1 \u003c\u003c bitCount) - 1; var result = (b \u003e\u003e (8 - bPos - bitCount)) \u0026 mask; data[width * (y - 1) + x] = (byte)result; if (x \u003c width - 1) { x++; } else { x = 0; y--; pos += paddingBytes; bPos = 8; } if (bPos + bitCount \u003e= 8 \u0026\u0026 y \u003e 0) { b = buffer[pos++]; bPos = 0; } else { bPos += bitCount; } } while (y \u003e 0); } To convert this raw data into an array of pixels the following code is used:\nT[] ParseIndexedPixels(int width, int height, int bitCount, IList valueTable, Span\u003cbyte\u003e pixelBuffer) { var rawDataSize = width * height; var rawData = ArrayPool\u003cbyte\u003e.Shared.Rent(rawDataSize); var pixels = new T[rawDataSize]; try { ReadBits(width, height, bitCount, pixelBuffer, rawData.AsSpan(0, rawDataSize)); for (var i = 0; i \u003c pixels.Length; i++) { pixels[i] = valueTable[rawData[i]]; } } finally { ArrayPool\u003cbyte\u003e.Shared.Return(rawData); } return pixels; } This code is generic because we can use it to parse a pixel array or a bitmask:\n// we previously loaded colorTable var pixels = ParseIndexedPixels(Width, Height, BitCount, colorTable, buffer[(BITMAP_INFO_HEADER_SIZE + colorTableLength)..]); var bitmask = ParseIndexedPixels(Width, Height, 1, [true, false], buffer[^(GetStride(Width, 1) * Height)..]); The bitmask is located at the end of the image. We need to get the stride and multiple it to the image height to calculate its length.\nAt this point we have loaded our bitmap from the ico file. The next step is to save it as 32 bit bitmap.\nTo do it properly we need to:\nGenerate a bitmap file header Change a bitmap header to BITMAPV5HEADER to support 32 bit bitmaps Apply a bitmask to the pixel array Consider the following Save function:\nvoid Save(Stream stream) { const int BI_BITFIELDS = 0x0003; var pixelBufferLength = Width * Height * sizeof(uint); var imageLength = FILE_HEADER_SIZE + BITMAP_V5_HEADER_SIZE + pixelBufferLength; // rent the array for the file var buffer = ArrayPool\u003cbyte\u003e.Shared.Rent(imageLength); try { //... generate a bitmap file header //... generate a bitmap header //... generate a new pixel array // save an image into the stream stream.Write(buffer.AsSpan(0, imageLength)); } finally { ArrayPool\u003cbyte\u003e.Shared.Return(buffer); } } We have created the buffer byte array to work with the new image data.\nThe bitmap file header has the following structure:\nOffset Size Description 0 2 The bitmap signature; we use BM 2 4 The image size: FILE_HEADER_SIZE + BITMAP_V5_HEADER_SIZE + pixelBufferLength 6 2 Reserved; can be 0 8 2 Reserved; can be 0 10 4 The offset of the pixel array from the beginning of the file. We save image as 32 bit bitmap so our file contains only a file header, a bitmap header and a pixel array. Therefore, the pixel array offset is FILE_HEADER_SIZE + BITMAP_V5_HEADER_SIZE The following code generates the bitmap file header:\n// bitmap file header var headerBuffer = buffer.AsSpan(0, FILE_HEADER_SIZE); headerBuffer.Clear(); // write the file signature headerBuffer[0] = (byte)'B'; headerBuffer[1] = (byte)'M'; // write the full file size: add the header size and subtract the bitmask length BitConverter.TryWriteBytes( headerBuffer[FILE_HEADER_SIZE..], imageLength); // write the pixel array position: file header + bitmap header BitConverter.TryWriteBytes( headerBuffer[FILE_HEADER_PIXELS..], FILE_HEADER_SIZE + BITMAP_V5_HEADER_SIZE); BITMAPV5HEADER extends BITMAPINFOHEADER. We only need a few fields:\nOffset Size Description 40 4 Color mask that specifies the red component of each pixel (0x00FF0000) 44 4 Color mask that specifies the green component of each pixel (0x00FF00) 48 4 Color mask that specifies the blue component of each pixel (0x000000FF) 54 4 Color mask that specifies the alpha component of each pixel (0xFF000000) Also we need to set compression to BI_BITFIELDS (0x0003) and the bitmap header size to 124:\n// bitmap header var bitmapHeaderBuffer = buffer.AsSpan(FILE_HEADER_SIZE, BITMAP_V5_HEADER_SIZE); bitmapHeaderBuffer.Clear(); // write the image parameters BitConverter.TryWriteBytes(bitmapHeaderBuffer, BITMAP_V5_HEADER_SIZE); BitConverter.TryWriteBytes(bitmapHeaderBuffer[BITMAP_HEADER_WIDTH..], Width); BitConverter.TryWriteBytes(bitmapHeaderBuffer[BITMAP_HEADER_HEIGHT..], Height); BitConverter.TryWriteBytes(bitmapHeaderBuffer[BITMAP_HEADER_COLOR_PANES..], 1); BitConverter.TryWriteBytes(bitmapHeaderBuffer[BITMAP_HEADER_BIT_COUNT..], 32); // write the bitfields masks BitConverter.TryWriteBytes(bitmapHeaderBuffer[BITMAP_HEADER_COMPRESSION..], BI_BITFIELDS); BitConverter.TryWriteBytes(bitmapHeaderBuffer[BITMAP_HEADER_RED_MASK..], (uint)0x00ff0000); BitConverter.TryWriteBytes(bitmapHeaderBuffer[BITMAP_HEADER_GREEN_MASK..], (uint)0x00ff00); BitConverter.TryWriteBytes(bitmapHeaderBuffer[BITMAP_HEADER_BLUE_MASK..], (uint)0x000000ff); BitConverter.TryWriteBytes(bitmapHeaderBuffer[BITMAP_HEADER_ALPHA_MASK..], (uint)0xff000000); To complete our Save function we need to implement the pixel array generation. The algorithm is the following: if the bitmask is true - set a pixel value; otherwise, set a transparent pixel. For 32 bit bitmaps the bitmask is ignored:\n// write pixel array WritePixels( Width, Height, pixels, BitCount == 32 ? [] : bitmask, buffer.AsSpan(FILE_HEADER_SIZE + BITMAP_V5_HEADER_SIZE, pixelBufferLength)); void WritePixels(int width, int height, uint[] pixels, bool[] bitmask, Span\u003cbyte\u003e buffer) { var hasAlpha = bitmask.Length == 0; buffer.Clear(); var pos = 0; var mask = (1u \u003c\u003c 8) - 1; for (var y = height; y \u003e 0; y--) { for (var x = 0; x \u003c width; x++) { // check the bitmask for the transparency for non-32 bit bitmaps var color = hasAlpha || bitmask[width * (y - 1) + x] ? pixels[width * (y - 1) + x] : 0x00000000; buffer[pos++] = (byte)(color \u0026 mask); buffer[pos++] = (byte)((color \u003e\u003e 8) \u0026 mask); buffer[pos++] = (byte)((color \u003e\u003e 16) \u0026 mask); // use the native transparency for 32 bit bitmaps or the bitmask value buffer[pos++] = hasAlpha ? (byte)((color \u003e\u003e 24) \u0026 mask) : bitmask[width * (y - 1) + x] ? (byte)0xFF : (byte)00; } } } The Save function is completed. It saves the icon image as 32 bit bitmap (with transparency). It doesn’t require any additional dependency so it can run on any OS that is supported by .NET.\nThe full source code is available here.\nUseful links:\nThe evolution of the ICO file format, part 1: Monochrome beginnings The evolution of the ICO file format, part 2: Now in color! The evolution of the ICO file format, part 3: Alpha-blended images The evolution of the ICO file format, part 4: PNG images BMP file format ICO (file format) ",
+  "wordCount" : "2052",
+  "inLanguage": "en",
+  "datePublished": "2025-01-05T12:00:00+05:00",
+  "dateModified": "2025-01-05T12:00:00+05:00",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://albertakhmetov.com/posts/2025/how-to-extract-a-specific-image-from-an-icon-file.-pure-c%23/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Albert Akhmetov",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://albertakhmetov.com/favicon.ico"
+    }
+  }
+}
+</script>
+</head>
+
+<body class="" id="top">
+<script>
+    if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark');
+    }
+
+</script>
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="https://albertakhmetov.com/" accesskey="h" title="Albert Akhmetov (Alt + H)">Albert Akhmetov</a>
+            <div class="logo-switches">
+            </div>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="https://albertakhmetov.com/posts/introduce" title="about me">
+                    <span>about me</span>
+                </a>
+            </li>
+            <li>
+                <a href="https://albertakhmetov.com/tags" title="tags">
+                    <span>tags</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    
+    <h1 class="post-title entry-hint-parent">
+      How to extract a specific image from the icon file. Pure C#
+    </h1>
+    <div class="post-meta"><span title='2025-01-05 12:00:00 +0500 +05'>January 5, 2025</span>
+
+</div>
+  </header> 
+  <div class="post-content"><p>In this note we are considering the image extraction from ICO files in pure C# (without Win32 or any other dependencies).</p>
+<p>The ICO file is a container which contains images of a different size and color depth.</p>
+<p>The file header has the following data:</p>
+<table>
+  <thead>
+      <tr>
+          <th>Offset</th>
+          <th>Size</th>
+          <th>Description</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>0</td>
+          <td>2</td>
+          <td>Reserved; it must be 0</td>
+      </tr>
+      <tr>
+          <td>2</td>
+          <td>2</td>
+          <td>The type: it muse be 1 for icons</td>
+      </tr>
+      <tr>
+          <td>4</td>
+          <td>2</td>
+          <td>The number of images in the file</td>
+      </tr>
+  </tbody>
+</table>
+<p>Then the array of ico directory entities follows:</p>
+<table>
+  <thead>
+      <tr>
+          <th>Offset</th>
+          <th>Size</th>
+          <th>Description</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>0</td>
+          <td>1</td>
+          <td>The image width; 0 value is used for 256</td>
+      </tr>
+      <tr>
+          <td>1</td>
+          <td>1</td>
+          <td>The image height; 0 value is used for 256</td>
+      </tr>
+      <tr>
+          <td>2</td>
+          <td>1</td>
+          <td>The number of colors in the palette; 0 if the image doesn&rsquo;t use a palette.</td>
+      </tr>
+      <tr>
+          <td>3</td>
+          <td>1</td>
+          <td>Reserved. Must be 0</td>
+      </tr>
+      <tr>
+          <td>4</td>
+          <td>2</td>
+          <td>The number of <a href="https://devblogs.microsoft.com/oldnewthing/20041201-00/?p=37163">planes</a></td>
+      </tr>
+      <tr>
+          <td>6</td>
+          <td>2</td>
+          <td>The number of bits per pixel</td>
+      </tr>
+      <tr>
+          <td>8</td>
+          <td>4</td>
+          <td>The size of the image data (in bytes)</td>
+      </tr>
+      <tr>
+          <td>12</td>
+          <td>4</td>
+          <td>The offset of the image data from the beginning of the file</td>
+      </tr>
+  </tbody>
+</table>
+<p>To obtain the position and size of the image data we need to parse the last two values (entryBuffer - the byte array of the whole ICO file):</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C#" data-lang="C#"><span style="display:flex;"><span><span style="color:#75715e">// extract the position and length of the content</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">int</span> pos = BitConverter.ToInt32(entryBuffer[(ICON_DIR_ENTRY_SIZE - <span style="color:#66d9ef">sizeof</span>(<span style="color:#66d9ef">uint</span>))..]);
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">int</span> length = BitConverter.ToInt32(entryBuffer[(ICON_DIR_ENTRY_SIZE - <span style="color:#66d9ef">sizeof</span>(<span style="color:#66d9ef">uint</span>) * <span style="color:#ae81ff">2</span>)..]);
+</span></span></code></pre></div><p>The image can be in two formats: PNG or bitmap. In the case of PNG we can simply extract data by the offset and save to the file:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C#" data-lang="C#"><span style="display:flex;"><span><span style="color:#75715e">// check the PNG signature</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> (IsPng(contentBuffer))
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// save the PNG file</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">using</span> var outputStream = File.Create(Path.Combine(outputDirectory, <span style="color:#e6db74">&#34;image.png&#34;</span>));
+</span></span><span style="display:flex;"><span>    outputStream.Write(contentBuffer);
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Checks if the buffer contains PNG image</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">bool</span> IsPng(Span&lt;<span style="color:#66d9ef">byte</span>&gt; buffer)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">long</span> PngSignature = BitConverter.ToInt64(<span style="color:#66d9ef">new</span> <span style="color:#66d9ef">byte</span>[] {
+</span></span><span style="display:flex;"><span>        (<span style="color:#66d9ef">byte</span>)<span style="color:#ae81ff">0x89</span>,
+</span></span><span style="display:flex;"><span>        (<span style="color:#66d9ef">byte</span>)<span style="color:#ae81ff">0x50</span>,
+</span></span><span style="display:flex;"><span>        (<span style="color:#66d9ef">byte</span>)<span style="color:#ae81ff">0x4e</span>,
+</span></span><span style="display:flex;"><span>        (<span style="color:#66d9ef">byte</span>)<span style="color:#ae81ff">0x47</span>,
+</span></span><span style="display:flex;"><span>        (<span style="color:#66d9ef">byte</span>)<span style="color:#ae81ff">0x0d</span>,
+</span></span><span style="display:flex;"><span>        (<span style="color:#66d9ef">byte</span>)<span style="color:#ae81ff">0x0a</span>,
+</span></span><span style="display:flex;"><span>        (<span style="color:#66d9ef">byte</span>)<span style="color:#ae81ff">0x1a</span>,
+</span></span><span style="display:flex;"><span>        (<span style="color:#66d9ef">byte</span>)<span style="color:#ae81ff">0x0a</span>
+</span></span><span style="display:flex;"><span>    });
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> buffer.Length &gt; <span style="color:#66d9ef">sizeof</span>(<span style="color:#66d9ef">long</span>)
+</span></span><span style="display:flex;"><span>        &amp;&amp; BitConverter.ToInt64(buffer[..<span style="color:#66d9ef">sizeof</span>(<span style="color:#66d9ef">long</span>)]) == PngSignature;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>The bitmap case is more complex. First of all, the bitmap is stored without a file header. That means we can&rsquo;t save it as it is. The image consists of two pixel arrays - the original image and the transparency bitmask. The icon image is their product. It&rsquo;s important for indexed bitmaps (bit count &lt; 24), less important for 24 bit bitmaps (without a mask we lose the transparency) and it doesn&rsquo;t matter for 32 bit bitmaps (some tools even add a solid bitmask to these images; but that&rsquo;s wrong). And the last (but not the least) - it&rsquo;s height. The height of the image is twice as large (due to the bitmask).</p>
+<p>As an ICO bitmap doesn&rsquo;t have a file header, the image data starts with the bitmap header. <a href="https://learn.microsoft.com/en-us/windows/win32/api/wingdi/ns-wingdi-bitmapinfoheader">BITMAPINFOHEADER</a> is used:</p>
+<table>
+  <thead>
+      <tr>
+          <th>Offset</th>
+          <th>Size</th>
+          <th>Description</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>0</td>
+          <td>4</td>
+          <td>The header size in bytes; it equals 40.</td>
+      </tr>
+      <tr>
+          <td>4</td>
+          <td>4</td>
+          <td>The bitmap width (in pixels)</td>
+      </tr>
+      <tr>
+          <td>8</td>
+          <td>4</td>
+          <td>The bitmap height (in pixels)</td>
+      </tr>
+      <tr>
+          <td>12</td>
+          <td>2</td>
+          <td>The number of planes for the target device; it must be 1</td>
+      </tr>
+      <tr>
+          <td>14</td>
+          <td>2</td>
+          <td>The number of bits per pixel</td>
+      </tr>
+      <tr>
+          <td>16</td>
+          <td>4</td>
+          <td>The image compression method; for icons <code>BI_RGB</code> (0) or <code>BI_BITFIELDS</code> (3) is used</td>
+      </tr>
+      <tr>
+          <td>20</td>
+          <td>4</td>
+          <td>The size of the image (in bytes); it can be set to 0 for uncompressed RGB bitmaps</td>
+      </tr>
+      <tr>
+          <td>24</td>
+          <td>4</td>
+          <td>The image horizontal resolution (in pixel per meter)</td>
+      </tr>
+      <tr>
+          <td>28</td>
+          <td>4</td>
+          <td>The image vertical resolution (in pixel per meter)</td>
+      </tr>
+      <tr>
+          <td>32</td>
+          <td>4</td>
+          <td>The number of colors in the palette; if 0 it&rsquo;s calculated in the following way: 1 &laquo; BitCount</td>
+      </tr>
+      <tr>
+          <td>36</td>
+          <td>4</td>
+          <td>The number of important colors is used, or 0 when every color is important</td>
+      </tr>
+  </tbody>
+</table>
+<p>This code loads the required information from the header:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C#" data-lang="C#"><span style="display:flex;"><span><span style="color:#75715e">// note: we divide height by 2</span>
+</span></span><span style="display:flex;"><span>Height = BitConverter.ToInt32(buffer[BITMAP_HEADER_HEIGHT..]) / <span style="color:#ae81ff">2</span>;
+</span></span><span style="display:flex;"><span>Width = BitConverter.ToInt32(buffer[BITMAP_HEADER_WIDTH..]);
+</span></span><span style="display:flex;"><span>BitCount = BitConverter.ToInt16(buffer[BITMAP_HEADER_BIT_COUNT..]);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Check the color count</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">var</span> colorCount = BitConverter.ToInt32(buffer[BITMAP_HEADER_COLORS..]);
+</span></span></code></pre></div><p>For indexed bitmaps (bit count &lt; 16) the color table follows the bitmap header. The color table is an array of <code>uint</code> values. The total number of these values is set by <code>colorCount</code> from the header or in the following way:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C#" data-lang="C#"><span style="display:flex;"><span><span style="color:#66d9ef">if</span> (colorCount == <span style="color:#ae81ff">0</span>)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    colorCount = BitCount &lt;= <span style="color:#ae81ff">8</span> ? (<span style="color:#ae81ff">1</span> &lt;&lt; BitCount) : <span style="color:#ae81ff">0</span>;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>The color table is only used for indexed bitmaps (bit count &lt;= 8); otherwise this section is omitted.</p>
+<p>To parse the color table the following code is used:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C#" data-lang="C#"><span style="display:flex;"><span><span style="color:#66d9ef">var</span> colorTableLength = colorCount * <span style="color:#66d9ef">sizeof</span>(<span style="color:#66d9ef">uint</span>);
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">var</span> colorTable = colorTableLength == <span style="color:#ae81ff">0</span> 
+</span></span><span style="display:flex;"><span>    ? [] 
+</span></span><span style="display:flex;"><span>    : ParseColorTable(buffer.Slice(BITMAP_INFO_HEADER_SIZE, colorTableLength));
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">uint</span>[] ParseColorTable(Span&lt;<span style="color:#66d9ef">byte</span>&gt; buffer)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">var</span> colorTableLength = buffer.Length / <span style="color:#66d9ef">sizeof</span>(<span style="color:#66d9ef">uint</span>);
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">var</span> pos = <span style="color:#ae81ff">0</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">var</span> colorTable = <span style="color:#66d9ef">new</span> <span style="color:#66d9ef">uint</span>[colorTableLength];
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">for</span> (<span style="color:#66d9ef">var</span> i = <span style="color:#ae81ff">0</span>; i &lt; colorTable.Length; i++)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">var</span> b = buffer[pos++];
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">var</span> g = buffer[pos++];
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">var</span> r = buffer[pos++];
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">var</span> a = buffer[pos++];
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        colorTable[i] = (<span style="color:#66d9ef">uint</span>)
+</span></span><span style="display:flex;"><span>            (<span style="color:#ae81ff">0xFFFFFFFF</span> &amp; (a &lt;&lt; <span style="color:#ae81ff">24</span> | r &lt;&lt; <span style="color:#ae81ff">16</span> | g &lt;&lt; <span style="color:#ae81ff">8</span> | b));
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> colorTable;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>The structure of the pixel array depends on the bit count property. For indexed bitmap you need to read data bit by bit and then get the value from the color table. 24 (32 bit) bitmap stores its pixels as 3 (4) bytes sequence.</p>
+<p>The following code shows how to parse a pixel array for 32 or 24 bits bitmaps (the case of 16 bit bitmap is omitted):</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C#" data-lang="C#"><span style="display:flex;"><span><span style="color:#66d9ef">var</span> pixels = ParsePixels(Width, Height, BitCount == <span style="color:#ae81ff">32</span>, buffer[BITMAP_INFO_HEADER_SIZE..]);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">uint</span>[] ParsePixels(<span style="color:#66d9ef">int</span> width, <span style="color:#66d9ef">int</span> height, <span style="color:#66d9ef">bool</span> hasAlpha, Span&lt;<span style="color:#66d9ef">byte</span>&gt; pixelBuffer)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">var</span> pixels = <span style="color:#66d9ef">new</span> <span style="color:#66d9ef">uint</span>[width * height];
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">var</span> pos = <span style="color:#ae81ff">0</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">for</span> (<span style="color:#66d9ef">var</span> y = height; y &gt; <span style="color:#ae81ff">0</span>; y--)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">for</span> (<span style="color:#66d9ef">var</span> x = <span style="color:#ae81ff">0</span>; x &lt; width; x++)
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">var</span> b = pixelBuffer[pos++]; <span style="color:#75715e">// blue</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">var</span> g = pixelBuffer[pos++]; <span style="color:#75715e">// green</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">var</span> r = pixelBuffer[pos++]; <span style="color:#75715e">// red</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">if</span> (hasAlpha)
+</span></span><span style="display:flex;"><span>            {
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">var</span> a = pixelBuffer[pos++]; <span style="color:#75715e">// alpha</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>                pixels[width * (y - <span style="color:#ae81ff">1</span>) + x] = (<span style="color:#66d9ef">uint</span>)
+</span></span><span style="display:flex;"><span>                    (<span style="color:#ae81ff">0xFFFFFFFF</span> &amp; (a &lt;&lt; <span style="color:#ae81ff">24</span> | r &lt;&lt; <span style="color:#ae81ff">16</span> | g &lt;&lt; <span style="color:#ae81ff">8</span> | b));
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">else</span>
+</span></span><span style="display:flex;"><span>            {
+</span></span><span style="display:flex;"><span>                pixels[width * (y - <span style="color:#ae81ff">1</span>) + x] = (<span style="color:#66d9ef">uint</span>)
+</span></span><span style="display:flex;"><span>                    (<span style="color:#ae81ff">0xFFFFFFFF</span> &amp; ((r + b + g == <span style="color:#ae81ff">0</span> ? <span style="color:#ae81ff">0</span> : <span style="color:#ae81ff">255</span>) &lt;&lt; <span style="color:#ae81ff">24</span> | r &lt;&lt; <span style="color:#ae81ff">16</span> | g &lt;&lt; <span style="color:#ae81ff">8</span> | b));
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> pixels;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>In case of indexed images a new concept is introduced: the row length of the pixel array must be aligned to 4 bytes. The row width is calculated in the following way:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C#" data-lang="C#"><span style="display:flex;"><span><span style="color:#66d9ef">int</span> GetStride(<span style="color:#66d9ef">int</span> width, <span style="color:#66d9ef">int</span> bitCount)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> (((width * bitCount) + <span style="color:#ae81ff">31</span>) &amp; ~<span style="color:#ae81ff">31</span>) &gt;&gt; <span style="color:#ae81ff">3</span>;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>To calculate the distance to the end of the row you can use the following function:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C#" data-lang="C#"><span style="display:flex;"><span><span style="color:#66d9ef">int</span> GetPaddingBytes(<span style="color:#66d9ef">int</span> width, <span style="color:#66d9ef">int</span> bitCount)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> GetStride(width, bitCount) - Convert.ToInt32(Math.Ceiling(width * bitCount / <span style="color:#ae81ff">8.0</span>));
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>The following code loads values from the buffer bit by bit:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C#" data-lang="C#"><span style="display:flex;"><span><span style="color:#66d9ef">void</span> ReadBits(<span style="color:#66d9ef">int</span> width, <span style="color:#66d9ef">int</span> height, <span style="color:#66d9ef">int</span> bitCount, Span&lt;<span style="color:#66d9ef">byte</span>&gt; buffer, Span&lt;<span style="color:#66d9ef">byte</span>&gt; data)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">var</span> pos = <span style="color:#ae81ff">0</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">var</span> x = <span style="color:#ae81ff">0</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">var</span> y = height;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">var</span> paddingBytes = GetPaddingBytes(width, bitCount);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">var</span> b = buffer[pos++];
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">var</span> bPos = <span style="color:#ae81ff">0</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">do</span>
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">var</span> mask = (<span style="color:#ae81ff">1</span> &lt;&lt; bitCount) - <span style="color:#ae81ff">1</span>;
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">var</span> result = (b &gt;&gt; (<span style="color:#ae81ff">8</span> - bPos - bitCount)) &amp; mask;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        data[width * (y - <span style="color:#ae81ff">1</span>) + x] = (<span style="color:#66d9ef">byte</span>)result;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> (x &lt; width - <span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            x++;
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">else</span>
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            x = <span style="color:#ae81ff">0</span>;
+</span></span><span style="display:flex;"><span>            y--;
+</span></span><span style="display:flex;"><span>            pos += paddingBytes;
+</span></span><span style="display:flex;"><span>            bPos = <span style="color:#ae81ff">8</span>;
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> (bPos + bitCount &gt;= <span style="color:#ae81ff">8</span> &amp;&amp; y &gt; <span style="color:#ae81ff">0</span>)
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            b = buffer[pos++];
+</span></span><span style="display:flex;"><span>            bPos = <span style="color:#ae81ff">0</span>;
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">else</span>
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            bPos += bitCount;
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">while</span> (y &gt; <span style="color:#ae81ff">0</span>);
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>To convert this raw data into an array of pixels the following code is used:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C#" data-lang="C#"><span style="display:flex;"><span>T[] ParseIndexedPixels&lt;T&gt;(<span style="color:#66d9ef">int</span> width, <span style="color:#66d9ef">int</span> height, <span style="color:#66d9ef">int</span> bitCount, IList&lt;T&gt; valueTable, Span&lt;<span style="color:#66d9ef">byte</span>&gt; pixelBuffer)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">var</span> rawDataSize = width * height;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">var</span> rawData = ArrayPool&lt;<span style="color:#66d9ef">byte</span>&gt;.Shared.Rent(rawDataSize);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">var</span> pixels = <span style="color:#66d9ef">new</span> T[rawDataSize];
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">try</span>
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        ReadBits(width, height, bitCount, pixelBuffer, rawData.AsSpan(<span style="color:#ae81ff">0</span>, rawDataSize));
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">for</span> (<span style="color:#66d9ef">var</span> i = <span style="color:#ae81ff">0</span>; i &lt; pixels.Length; i++)
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            pixels[i] = valueTable[rawData[i]];
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">finally</span>
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        ArrayPool&lt;<span style="color:#66d9ef">byte</span>&gt;.Shared.Return(rawData);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> pixels;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>This code is generic because we can use it to parse a pixel array or a bitmask:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C#" data-lang="C#"><span style="display:flex;"><span><span style="color:#75715e">// we previously loaded colorTable</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">var</span> pixels = ParseIndexedPixels(Width, Height, BitCount, colorTable, buffer[(BITMAP_INFO_HEADER_SIZE + colorTableLength)..]);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">var</span> bitmask = ParseIndexedPixels(Width, Height, <span style="color:#ae81ff">1</span>, [<span style="color:#66d9ef">true</span>, <span style="color:#66d9ef">false</span>], buffer[^(GetStride(Width, <span style="color:#ae81ff">1</span>) * Height)..]);
+</span></span></code></pre></div><p>The bitmask is located at the end of the image. We need to get the stride and multiple it to the image height to calculate its length.</p>
+<p>At this point we have loaded our bitmap from the ico file. The next step is to save it as 32 bit bitmap.</p>
+<p>To do it properly we need to:</p>
+<ul>
+<li>Generate a bitmap file header</li>
+<li>Change a bitmap header to <a href="https://learn.microsoft.com/en-us/windows/win32/api/wingdi/ns-wingdi-bitmapv5header">BITMAPV5HEADER</a> to support 32 bit bitmaps</li>
+<li>Apply a bitmask to the pixel array</li>
+</ul>
+<p>Consider the following <code>Save</code> function:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C#" data-lang="C#"><span style="display:flex;"><span><span style="color:#66d9ef">void</span> Save(Stream stream) {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">const</span> <span style="color:#66d9ef">int</span> BI_BITFIELDS = <span style="color:#ae81ff">0x0003</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">var</span> pixelBufferLength = Width * Height * <span style="color:#66d9ef">sizeof</span>(<span style="color:#66d9ef">uint</span>);
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">var</span> imageLength = FILE_HEADER_SIZE + BITMAP_V5_HEADER_SIZE + pixelBufferLength;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// rent the array for the file</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">var</span> buffer = ArrayPool&lt;<span style="color:#66d9ef">byte</span>&gt;.Shared.Rent(imageLength);
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">try</span>
+</span></span><span style="display:flex;"><span>    {   
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">//... generate a bitmap file header</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">//... generate a bitmap header</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">//... generate a new pixel array</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// save an image into the stream</span>
+</span></span><span style="display:flex;"><span>        stream.Write(buffer.AsSpan(<span style="color:#ae81ff">0</span>, imageLength));
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">finally</span>
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        ArrayPool&lt;<span style="color:#66d9ef">byte</span>&gt;.Shared.Return(buffer);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>We have created the buffer byte array to work with the new image data.</p>
+<p>The bitmap file header has the following structure:</p>
+<table>
+  <thead>
+      <tr>
+          <th>Offset</th>
+          <th>Size</th>
+          <th>Description</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>0</td>
+          <td>2</td>
+          <td>The bitmap signature; we use <strong>BM</strong></td>
+      </tr>
+      <tr>
+          <td>2</td>
+          <td>4</td>
+          <td>The image size: FILE_HEADER_SIZE + BITMAP_V5_HEADER_SIZE + pixelBufferLength</td>
+      </tr>
+      <tr>
+          <td>6</td>
+          <td>2</td>
+          <td>Reserved; can be 0</td>
+      </tr>
+      <tr>
+          <td>8</td>
+          <td>2</td>
+          <td>Reserved; can be 0</td>
+      </tr>
+      <tr>
+          <td>10</td>
+          <td>4</td>
+          <td>The offset of the pixel array from the beginning of the file. We save image as 32 bit bitmap so our file contains only a file header, a bitmap header and a pixel array. Therefore, the pixel array offset is FILE_HEADER_SIZE + BITMAP_V5_HEADER_SIZE</td>
+      </tr>
+  </tbody>
+</table>
+<p>The following code generates the bitmap file header:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C#" data-lang="C#"><span style="display:flex;"><span><span style="color:#75715e">// bitmap file header</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">var</span> headerBuffer = buffer.AsSpan(<span style="color:#ae81ff">0</span>, FILE_HEADER_SIZE);
+</span></span><span style="display:flex;"><span>headerBuffer.Clear();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// write the file signature</span>
+</span></span><span style="display:flex;"><span>headerBuffer[<span style="color:#ae81ff">0</span>] = (<span style="color:#66d9ef">byte</span>)<span style="color:#e6db74">&#39;B&#39;</span>;
+</span></span><span style="display:flex;"><span>headerBuffer[<span style="color:#ae81ff">1</span>] = (<span style="color:#66d9ef">byte</span>)<span style="color:#e6db74">&#39;M&#39;</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// write the full file size: add the header size and subtract the bitmask length</span>
+</span></span><span style="display:flex;"><span>BitConverter.TryWriteBytes(
+</span></span><span style="display:flex;"><span>    headerBuffer[FILE_HEADER_SIZE..],
+</span></span><span style="display:flex;"><span>    imageLength);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// write the pixel array position: file header + bitmap header</span>
+</span></span><span style="display:flex;"><span>BitConverter.TryWriteBytes(
+</span></span><span style="display:flex;"><span>    headerBuffer[FILE_HEADER_PIXELS..],
+</span></span><span style="display:flex;"><span>    FILE_HEADER_SIZE + BITMAP_V5_HEADER_SIZE);
+</span></span></code></pre></div><p><a href="https://learn.microsoft.com/en-us/windows/win32/api/wingdi/ns-wingdi-bitmapv5header">BITMAPV5HEADER</a> extends <a href="https://learn.microsoft.com/en-us/windows/win32/api/wingdi/ns-wingdi-bitmapinfoheader">BITMAPINFOHEADER</a>. We only need a few fields:</p>
+<table>
+  <thead>
+      <tr>
+          <th>Offset</th>
+          <th>Size</th>
+          <th>Description</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>40</td>
+          <td>4</td>
+          <td>Color mask that specifies the red component of each pixel (0x00FF0000)</td>
+      </tr>
+      <tr>
+          <td>44</td>
+          <td>4</td>
+          <td>Color mask that specifies the green component of each pixel (0x00FF00)</td>
+      </tr>
+      <tr>
+          <td>48</td>
+          <td>4</td>
+          <td>Color mask that specifies the blue component of each pixel (0x000000FF)</td>
+      </tr>
+      <tr>
+          <td>54</td>
+          <td>4</td>
+          <td>Color mask that specifies the alpha component of each pixel (0xFF000000)</td>
+      </tr>
+  </tbody>
+</table>
+<p>Also we need to set compression to <code>BI_BITFIELDS</code> (0x0003) and the bitmap header size to 124:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C#" data-lang="C#"><span style="display:flex;"><span><span style="color:#75715e">// bitmap header</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">var</span> bitmapHeaderBuffer = buffer.AsSpan(FILE_HEADER_SIZE, BITMAP_V5_HEADER_SIZE);
+</span></span><span style="display:flex;"><span>bitmapHeaderBuffer.Clear();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// write the image parameters</span>
+</span></span><span style="display:flex;"><span>BitConverter.TryWriteBytes(bitmapHeaderBuffer, BITMAP_V5_HEADER_SIZE);
+</span></span><span style="display:flex;"><span>BitConverter.TryWriteBytes(bitmapHeaderBuffer[BITMAP_HEADER_WIDTH..], Width);
+</span></span><span style="display:flex;"><span>BitConverter.TryWriteBytes(bitmapHeaderBuffer[BITMAP_HEADER_HEIGHT..], Height);
+</span></span><span style="display:flex;"><span>BitConverter.TryWriteBytes(bitmapHeaderBuffer[BITMAP_HEADER_COLOR_PANES..], <span style="color:#ae81ff">1</span>);
+</span></span><span style="display:flex;"><span>BitConverter.TryWriteBytes(bitmapHeaderBuffer[BITMAP_HEADER_BIT_COUNT..], <span style="color:#ae81ff">32</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// write the bitfields masks</span>
+</span></span><span style="display:flex;"><span>BitConverter.TryWriteBytes(bitmapHeaderBuffer[BITMAP_HEADER_COMPRESSION..], BI_BITFIELDS);
+</span></span><span style="display:flex;"><span>BitConverter.TryWriteBytes(bitmapHeaderBuffer[BITMAP_HEADER_RED_MASK..], (<span style="color:#66d9ef">uint</span>)<span style="color:#ae81ff">0x00ff0000</span>);
+</span></span><span style="display:flex;"><span>BitConverter.TryWriteBytes(bitmapHeaderBuffer[BITMAP_HEADER_GREEN_MASK..], (<span style="color:#66d9ef">uint</span>)<span style="color:#ae81ff">0x00ff00</span>);
+</span></span><span style="display:flex;"><span>BitConverter.TryWriteBytes(bitmapHeaderBuffer[BITMAP_HEADER_BLUE_MASK..], (<span style="color:#66d9ef">uint</span>)<span style="color:#ae81ff">0x000000ff</span>);
+</span></span><span style="display:flex;"><span>BitConverter.TryWriteBytes(bitmapHeaderBuffer[BITMAP_HEADER_ALPHA_MASK..], (<span style="color:#66d9ef">uint</span>)<span style="color:#ae81ff">0xff000000</span>);
+</span></span></code></pre></div><p>To complete our <code>Save</code> function we need to implement the pixel array generation. The algorithm is the following: if the bitmask is <code>true</code> - set a pixel value; otherwise, set a transparent pixel. For 32 bit bitmaps the bitmask is ignored:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C#" data-lang="C#"><span style="display:flex;"><span><span style="color:#75715e">// write pixel array</span>
+</span></span><span style="display:flex;"><span>WritePixels(
+</span></span><span style="display:flex;"><span>    Width,
+</span></span><span style="display:flex;"><span>    Height,
+</span></span><span style="display:flex;"><span>    pixels,
+</span></span><span style="display:flex;"><span>    BitCount == <span style="color:#ae81ff">32</span> ? [] : bitmask,
+</span></span><span style="display:flex;"><span>    buffer.AsSpan(FILE_HEADER_SIZE + BITMAP_V5_HEADER_SIZE, pixelBufferLength));
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">void</span> WritePixels(<span style="color:#66d9ef">int</span> width, <span style="color:#66d9ef">int</span> height, <span style="color:#66d9ef">uint</span>[] pixels, <span style="color:#66d9ef">bool</span>[] bitmask, Span&lt;<span style="color:#66d9ef">byte</span>&gt; buffer)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">var</span> hasAlpha = bitmask.Length == <span style="color:#ae81ff">0</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    buffer.Clear();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">var</span> pos = <span style="color:#ae81ff">0</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">var</span> mask = (<span style="color:#ae81ff">1</span>u &lt;&lt; <span style="color:#ae81ff">8</span>) - <span style="color:#ae81ff">1</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">for</span> (<span style="color:#66d9ef">var</span> y = height; y &gt; <span style="color:#ae81ff">0</span>; y--)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">for</span> (<span style="color:#66d9ef">var</span> x = <span style="color:#ae81ff">0</span>; x &lt; width; x++)
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e">// check the bitmask for the transparency for non-32 bit bitmaps</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">var</span> color = hasAlpha || bitmask[width * (y - <span style="color:#ae81ff">1</span>) + x]
+</span></span><span style="display:flex;"><span>                ? pixels[width * (y - <span style="color:#ae81ff">1</span>) + x]
+</span></span><span style="display:flex;"><span>                : <span style="color:#ae81ff">0x00000000</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            buffer[pos++] = (<span style="color:#66d9ef">byte</span>)(color &amp; mask);
+</span></span><span style="display:flex;"><span>            buffer[pos++] = (<span style="color:#66d9ef">byte</span>)((color &gt;&gt; <span style="color:#ae81ff">8</span>) &amp; mask);
+</span></span><span style="display:flex;"><span>            buffer[pos++] = (<span style="color:#66d9ef">byte</span>)((color &gt;&gt; <span style="color:#ae81ff">16</span>) &amp; mask);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e">// use the native transparency for 32 bit bitmaps or the bitmask value</span>
+</span></span><span style="display:flex;"><span>            buffer[pos++] = hasAlpha
+</span></span><span style="display:flex;"><span>                ? (<span style="color:#66d9ef">byte</span>)((color &gt;&gt; <span style="color:#ae81ff">24</span>) &amp; mask)
+</span></span><span style="display:flex;"><span>                : bitmask[width * (y - <span style="color:#ae81ff">1</span>) + x] ? (<span style="color:#66d9ef">byte</span>)<span style="color:#ae81ff">0xFF</span> : (<span style="color:#66d9ef">byte</span>)<span style="color:#ae81ff">00</span>;
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>The <code>Save</code> function is completed. It saves the icon image as 32 bit bitmap (with transparency). It doesn&rsquo;t require any additional dependency so it can run on any OS that is supported by .NET.</p>
+<p>The full source code is available <a href="https://github.com/albertakhmetov/albertakhmetov.com/tree/main/IcoExtractorV2">here</a>.</p>
+<p>Useful links:</p>
+<ul>
+<li><a href="https://devblogs.microsoft.com/oldnewthing/20101018-00/?p=12513">The evolution of the ICO file format, part 1: Monochrome beginnings</a></li>
+<li><a href="https://devblogs.microsoft.com/oldnewthing/20101019-00/?p=12503">The evolution of the ICO file format, part 2: Now in color!</a></li>
+<li><a href="https://devblogs.microsoft.com/oldnewthing/20101021-00/?p=12483">The evolution of the ICO file format, part 3: Alpha-blended images</a></li>
+<li><a href="https://devblogs.microsoft.com/oldnewthing/20101022-00/?p=12473">The evolution of the ICO file format, part 4: PNG images</a></li>
+<li><a href="https://en.wikipedia.org/wiki/BMP_file_format">BMP file format</a></li>
+<li><a href="https://en.wikipedia.org/wiki/ICO_(file_format)">ICO (file format)</a></li>
+</ul>
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+      <li><a href="https://albertakhmetov.com/tags/c%23/">C#</a></li>
+      <li><a href="https://albertakhmetov.com/tags/.net/">.NET</a></li>
+      <li><a href="https://albertakhmetov.com/tags/ico/">ICO</a></li>
+      <li><a href="https://albertakhmetov.com/tags/bitmap/">Bitmap</a></li>
+      <li><a href="https://albertakhmetov.com/tags/fileformat/">FileFormat</a></li>
+    </ul>
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+        <span>&copy; 2025 <a href="https://albertakhmetov.com/">Albert Akhmetov</a></span> · 
+
+    <span>
+        Powered by
+        <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
+        <a href="https://github.com/adityatelange/hugo-PaperMod/" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu')
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = 'copy';
+
+        function copyingDone() {
+            copybutton.innerHTML = 'copied!';
+            setTimeout(() => {
+                copybutton.innerHTML = 'copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+
+        if (container.classList.contains("highlight")) {
+            container.appendChild(copybutton);
+        } else if (container.parentNode.firstChild == container) {
+            
+        } else if (codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName == "TABLE") {
+            
+            codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.appendChild(copybutton);
+        } else {
+            
+            codeblock.parentNode.appendChild(copybutton);
+        }
+    });
+</script>
+</body>
+
+</html>

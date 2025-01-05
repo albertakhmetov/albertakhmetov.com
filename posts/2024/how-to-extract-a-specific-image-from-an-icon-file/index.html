@@ -246,7 +246,7 @@
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></div><p>I use <a href="https://github.com/microsoft/CsWin32">C#/Win32 P/Invoke Source Generator</a> so we need to add the reference to the NuGet package and add <code>NativeMethods.txt</code> with <code>CreateIconFromResourceEx</code> function. Also this method uses <a href="https://www.nuget.org/packages/System.Drawing.Common/"><code>System.Drawing.Common</code></a>. We need to add the reference to it too. The sample code is available <a href="https://github.com/albertakhmetov/albertakhmetov.com/tree/main/IcoExtractor">here</a>.</p>
 <p>Don&rsquo;t forget that <code>System.Drawing.Common</code> package works only on Windows! Of course, in this case cross-platforming is pointless, since we use the system function <code>CreateIconFromResourceEx</code>. But it&rsquo;s just a friendly reminder.</p>
-<p>There is another way to extract images from ICO files without using Windows-specific functions. We&rsquo;ll consider it in the next note.</p>
+<p>There is another way to extract images from ICO files without using Windows-specific functions. We&rsquo;ll consider it in the <a href="../../2025/how-to-extract-a-specific-image-from-an-icon-file.-pure-c%23/">next note</a>.</p>
 
   </div>
 
@@ -262,7 +262,7 @@
     </main>
     
 <footer class="footer">
-        <span>&copy; 2024 <a href="https://albertakhmetov.com/">Albert Akhmetov</a></span> · 
+        <span>&copy; 2025 <a href="https://albertakhmetov.com/">Albert Akhmetov</a></span> · 
 
     <span>
         Powered by
