@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>Win2D | Albert Akhmetov</title>
+<meta name="keywords" content="How use Direct2D in WinUI 3, Hardware accelerated graphics WinUI">
+<meta name="description" content="Win2D provides the ability to use GPU-accelerated 2D graphics in WinUI 3 apps.">
+<meta name="author" content="">
+<link rel="canonical" href="https://albertakhmetov.com/posts/2025/win2d/">
+<link crossorigin="anonymous" href="/assets/css/stylesheet.css" rel="preload stylesheet" as="style">
+<link rel="icon" href="https://albertakhmetov.com/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="https://albertakhmetov.com/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://albertakhmetov.com/favicon-32x32.png">
+<link rel="apple-touch-icon" href="https://albertakhmetov.com/apple-touch-icon.png">
+<link rel="mask-icon" href="https://albertakhmetov.com/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<link rel="alternate" hreflang="en" href="https://albertakhmetov.com/posts/2025/win2d/">
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --code-block-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-track {
+                background: 0 0;
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-thumb {
+                border-color: var(--theme);
+            }
+        }
+
+    </style>
+</noscript><meta property="og:title" content="Win2D" />
+<meta property="og:description" content="Win2D provides the ability to use GPU-accelerated 2D graphics in WinUI 3 apps." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://albertakhmetov.com/posts/2025/win2d/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2025-01-12T12:00:00+05:00" />
+<meta property="article:modified_time" content="2025-01-12T12:00:00+05:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Win2D"/>
+<meta name="twitter:description" content="Win2D provides the ability to use GPU-accelerated 2D graphics in WinUI 3 apps."/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Posts",
+      "item": "https://albertakhmetov.com/posts/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "Win2D",
+      "item": "https://albertakhmetov.com/posts/2025/win2d/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Win2D",
+  "name": "Win2D",
+  "description": "Win2D provides the ability to use GPU-accelerated 2D graphics in WinUI 3 apps.\n",
+  "keywords": [
+    "How use Direct2D in WinUI 3", "Hardware accelerated graphics WinUI"
+  ],
+  "articleBody": "Win2D provides the ability to use GPU-accelerated 2D graphics in WinUI 3 apps.\nThe official documentaion positions Win2D as a solution for simple games, charts and other simple 2D graphics. I use it for the image preview area of my small pet project (annonce will come soon).\nTo use Win2D in WinUI 3 projects Microsoft.Graphics.Win2D package is used. API Reference is under reconstruction.\nThe simplest way to start using Win2D is to place CanvasControl and add handlers for Draw and CreateResources events. The main trick is to capture the load task to control resource loading process:\nxmlns:win2d=\"using:Microsoft.Graphics.Canvas.UI.Xaml\" ",
+  "wordCount" : "411",
+  "inLanguage": "en",
+  "datePublished": "2025-01-12T12:00:00+05:00",
+  "dateModified": "2025-01-12T12:00:00+05:00",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://albertakhmetov.com/posts/2025/win2d/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Albert Akhmetov",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://albertakhmetov.com/favicon.ico"
+    }
+  }
+}
+</script>
+</head>
+
+<body class="" id="top">
+<script>
+    if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark');
+    }
+
+</script>
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="https://albertakhmetov.com/" accesskey="h" title="Albert Akhmetov (Alt + H)">Albert Akhmetov</a>
+            <div class="logo-switches">
+            </div>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="https://albertakhmetov.com/posts/introduce" title="about me">
+                    <span>about me</span>
+                </a>
+            </li>
+            <li>
+                <a href="https://albertakhmetov.com/tags" title="tags">
+                    <span>tags</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    
+    <h1 class="post-title entry-hint-parent">
+      Win2D
+    </h1>
+    <div class="post-meta"><span title='2025-01-12 12:00:00 +0500 +05'>January 12, 2025</span>
+
+</div>
+  </header> 
+  <div class="post-content"><p>Win2D provides the ability to use GPU-accelerated 2D graphics in WinUI 3 apps.</p>
+<p><a href="https://learn.microsoft.com/en-us/windows/apps/develop/win2d/">The official documentaion</a> positions Win2D as a solution for simple games, charts and other simple 2D graphics. I use it for the image preview area of my small pet project (annonce will come soon).</p>
+<p>To use Win2D in WinUI 3 projects <a href="https://www.nuget.org/packages/Microsoft.Graphics.Win2D/">Microsoft.Graphics.Win2D</a> package is used. <a href="https://microsoft.github.io/Win2D/WinUI3/html/Introduction.htm">API Reference</a> is under reconstruction.</p>
+<p>The simplest way to start using Win2D is to place <code>CanvasControl</code> and add handlers for <code>Draw</code> and <code>CreateResources</code> events. The main trick is to capture the load task to control resource loading process:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-XML" data-lang="XML"><span style="display:flex;"><span>xmlns:win2d=&#34;using:Microsoft.Graphics.Canvas.UI.Xaml&#34;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">&lt;win2d:CanvasControl</span> <span style="color:#a6e22e">CreateResources=</span><span style="color:#e6db74">&#34;CanvasControl_CreateResources&#34;</span> <span style="color:#a6e22e">Draw=</span><span style="color:#e6db74">&#34;CanvasControl_Draw&#34;</span><span style="color:#f92672">/&gt;</span>
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C#" data-lang="C#"><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">private</span> Task? imageLoadTask;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">private</span> CanvasBitmap? image;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Draw an image</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">private</span> <span style="color:#66d9ef">void</span> CanvasControl_Draw(CanvasControl sender, CanvasDrawEventArgs args)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Wait for resource loading</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> (!IsImageLoading() &amp;&amp; image != <span style="color:#66d9ef">null</span>)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Calculate the factor to fit an image into the canvas</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">var</span> factor = Math.Min(sender.ActualWidth / image.Size.Width, sender.ActualHeight / image.Size.Height);
+</span></span><span style="display:flex;"><span>       
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Calculate a new image size</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">var</span> width = factor * image.Size.Width;
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">var</span> height = factor * image.Size.Height;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Calculate an image center</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">var</span> x = (sender.ActualWidth - width) / <span style="color:#ae81ff">2</span>;
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">var</span> y = (sender.ActualHeight - height) / <span style="color:#ae81ff">2</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Draw an image</span>
+</span></span><span style="display:flex;"><span>        args.DrawingSession.DrawImage(
+</span></span><span style="display:flex;"><span>            image,
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">new</span> Rect(x, y, width, height),
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">new</span> Rect(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>, image.Size.Width, image.Size.Width),
+</span></span><span style="display:flex;"><span>            <span style="color:#ae81ff">1</span>,
+</span></span><span style="display:flex;"><span>            CanvasImageInterpolation.NearestNeighbor);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Creates resources needed for drawing</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">private</span> <span style="color:#66d9ef">void</span> CanvasControl_CreateResources(CanvasControl sender, CanvasCreateResourcesEventArgs args)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    args.TrackAsyncAction(CreateResources().AsAsyncAction());
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Creates resources</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">private</span> <span style="color:#66d9ef">async</span> Task CreateResources()
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Cancel the current loading task</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">await</span> CancelTask();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Dispose the current image</span>
+</span></span><span style="display:flex;"><span>    image?.Dispose();
+</span></span><span style="display:flex;"><span>    image = <span style="color:#66d9ef">null</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Load a new image from ImageStream stream</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">await</span> LoadImage(ImageStream?.AsRandomAccessStream());
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Cancels the current loading</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">private</span> <span style="color:#66d9ef">async</span> Task CancelTask()
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> (imageLoadTask != <span style="color:#66d9ef">null</span>)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        imageLoadTask.AsAsyncAction().Cancel();
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">try</span>
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">await</span> imageLoadTask;
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">catch</span>
+</span></span><span style="display:flex;"><span>        { }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        imageLoadTask = <span style="color:#66d9ef">null</span>;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Loads a new image</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">private</span> <span style="color:#66d9ef">async</span> Task LoadImage(IRandomAccessStream? stream)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Loads an image asynchronously</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> (stream != <span style="color:#66d9ef">null</span>)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        image = <span style="color:#66d9ef">await</span> CanvasBitmap.LoadAsync(ImageCanvas, stream);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">else</span>
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        image = <span style="color:#66d9ef">null</span>;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Update a canvas</span>
+</span></span><span style="display:flex;"><span>    ImageCanvas.Invalidate();
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Waits for an image loading</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">private</span> <span style="color:#66d9ef">bool</span> IsImageLoading()
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> (imageLoadTask == <span style="color:#66d9ef">null</span>)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">false</span>;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> (!imageLoadTask.IsCompleted)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">true</span>;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">else</span>
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">try</span>
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            imageLoadTask.Wait();
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">catch</span> (AggregateException ex)
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            ex.Handle(x =&gt; <span style="color:#66d9ef">throw</span> x);
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">finally</span>
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            imageLoadTask = <span style="color:#66d9ef">null</span>;
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">false</span>;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>When the page or other container is unloaded we need to dispose the canvas properly:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C#" data-lang="C#"><span style="display:flex;"><span>canvas.RemoveFromVisualTree();
+</span></span><span style="display:flex;"><span>canvas = <span style="color:#66d9ef">null</span>;
+</span></span></code></pre></div><p>I&rsquo;ll tell you more about Win2D using my project as an example. Stay with us.</p>
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+      <li><a href="https://albertakhmetov.com/tags/c%23/">C#</a></li>
+      <li><a href="https://albertakhmetov.com/tags/.net/">.NET</a></li>
+      <li><a href="https://albertakhmetov.com/tags/win2d/">Win2D</a></li>
+    </ul>
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+        <span>&copy; 2025 <a href="https://albertakhmetov.com/">Albert Akhmetov</a></span> · 
+
+    <span>
+        Powered by
+        <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
+        <a href="https://github.com/adityatelange/hugo-PaperMod/" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu')
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = 'copy';
+
+        function copyingDone() {
+            copybutton.innerHTML = 'copied!';
+            setTimeout(() => {
+                copybutton.innerHTML = 'copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+
+        if (container.classList.contains("highlight")) {
+            container.appendChild(copybutton);
+        } else if (container.parentNode.firstChild == container) {
+            
+        } else if (codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName == "TABLE") {
+            
+            codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.appendChild(copybutton);
+        } else {
+            
+            codeblock.parentNode.appendChild(copybutton);
+        }
+    });
+</script>
+</body>
+
+</html>
