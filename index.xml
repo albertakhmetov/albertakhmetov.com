@@ -6,8 +6,15 @@
     <description>Recent content on Albert Akhmetov</description>
     <generator>Hugo -- 0.136.5</generator>
     <language>en-us</language>
-    <lastBuildDate>Sun, 12 Jan 2025 12:00:00 +0500</lastBuildDate>
+    <lastBuildDate>Sun, 19 Jan 2025 12:00:00 +0500</lastBuildDate>
     <atom:link href="https://albertakhmetov.com/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Place image pixels in a grid</title>
+      <link>https://albertakhmetov.com/posts/2025/place-image-pixels-in-a-grid/</link>
+      <pubDate>Sun, 19 Jan 2025 12:00:00 +0500</pubDate>
+      <guid>https://albertakhmetov.com/posts/2025/place-image-pixels-in-a-grid/</guid>
+      <description>&lt;p&gt;Let&amp;rsquo;s draw a pixelated image separated by transparent lines in Win2D!&lt;/p&gt;</description>
+    </item>
     <item>
       <title>Win2D</title>
       <link>https://albertakhmetov.com/posts/2025/win2d/</link>
