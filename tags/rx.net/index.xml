@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>Rx.NET on Albert Akhmetov</title>
+    <link>https://albertakhmetov.com/tags/rx.net/</link>
+    <description>Recent content in Rx.NET on Albert Akhmetov</description>
+    <generator>Hugo -- 0.136.5</generator>
+    <language>en-us</language>
+    <lastBuildDate>Sun, 26 Jan 2025 12:00:00 +0500</lastBuildDate>
+    <atom:link href="https://albertakhmetov.com/tags/rx.net/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Mouse drag with Reactive Extensions</title>
+      <link>https://albertakhmetov.com/posts/2025/mouse-drag-with-reactive-extensions/</link>
+      <pubDate>Sun, 26 Jan 2025 12:00:00 +0500</pubDate>
+      <guid>https://albertakhmetov.com/posts/2025/mouse-drag-with-reactive-extensions/</guid>
+      <description>&lt;p&gt;Let&amp;rsquo;s consider how to implement the ability to drag items with &lt;a href=&#34;https://github.com/dotnet/reactive&#34;&gt;Rx.NET&lt;/a&gt;.&lt;/p&gt;</description>
+    </item>
+  </channel>
+</rss>

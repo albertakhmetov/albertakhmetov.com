@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>Mouse drag with Reactive Extensions | Albert Akhmetov</title>
+<meta name="keywords" content="Mouse drag with Reactive Extensions, Reactive Extensions, RX.NET">
+<meta name="description" content="Let&rsquo;s consider how to implement the ability to drag items with Rx.NET.">
+<meta name="author" content="">
+<link rel="canonical" href="https://albertakhmetov.com/posts/2025/mouse-drag-with-reactive-extensions/">
+<link crossorigin="anonymous" href="/assets/css/stylesheet.css" rel="preload stylesheet" as="style">
+<link rel="icon" href="https://albertakhmetov.com/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="https://albertakhmetov.com/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://albertakhmetov.com/favicon-32x32.png">
+<link rel="apple-touch-icon" href="https://albertakhmetov.com/apple-touch-icon.png">
+<link rel="mask-icon" href="https://albertakhmetov.com/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<link rel="alternate" hreflang="en" href="https://albertakhmetov.com/posts/2025/mouse-drag-with-reactive-extensions/">
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --code-block-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-track {
+                background: 0 0;
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-thumb {
+                border-color: var(--theme);
+            }
+        }
+
+    </style>
+</noscript><meta property="og:title" content="Mouse drag with Reactive Extensions" />
+<meta property="og:description" content="Let&rsquo;s consider how to implement the ability to drag items with Rx.NET." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://albertakhmetov.com/posts/2025/mouse-drag-with-reactive-extensions/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2025-01-26T12:00:00+05:00" />
+<meta property="article:modified_time" content="2025-01-26T12:00:00+05:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Mouse drag with Reactive Extensions"/>
+<meta name="twitter:description" content="Let&rsquo;s consider how to implement the ability to drag items with Rx.NET."/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Posts",
+      "item": "https://albertakhmetov.com/posts/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "Mouse drag with Reactive Extensions",
+      "item": "https://albertakhmetov.com/posts/2025/mouse-drag-with-reactive-extensions/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Mouse drag with Reactive Extensions",
+  "name": "Mouse drag with Reactive Extensions",
+  "description": "Let\u0026rsquo;s consider how to implement the ability to drag items with Rx.NET.\n",
+  "keywords": [
+    "Mouse drag with Reactive Extensions", "Reactive Extensions", "RX.NET"
+  ],
+  "articleBody": "Let’s consider how to implement the ability to drag items with Rx.NET.\nThe classic way to implement the drag and drop functionality is to implement event handlers for mouse down, mouse up and mouse move events. Then save the current drag state (enable it when the mouse button is pressed and disable it when the mouse button is released) and handle a mouse movement.\nUsing Rx.NET, you can create the same logic in a more compact form.\nThis example assumes using WinUI to create the UI. Other frameworks have different mouse event arguments.\nAdd the NuGet package to start using Rx.NET:\ndotnet add package System.Reactive --version 6.0.1 You also need to use the following namespace:\nusing System.Reactive.Linq; The following code implements the drag and drop logic:\nvar down = Observable .FromEventPattern(this, nameof(Control.PointerPressed)) .Where(i =\u003e IsLeftButton(i.EventArgs)); var up = Observable .FromEventPattern(this, nameof(Control.PointerReleased)) .Where(i =\u003e IsLeftButton(i.EventArgs)); var move = Observable .FromEventPattern(this, nameof(Control.PointerMoved)) .Where(i =\u003e IsLeftButton(i.EventArgs)) .TakeUntil(up); mouseMoveDisposable = down.Select(i =\u003e GetStartPoint(i.EventArgs)) .SelectMany(start =\u003e move.Select(i =\u003e CalculateDelta(start, i.EventArgs))) .Subscribe(i =\u003e SetOffset(i.X, i.Y)); private bool IsLeftButton(PointerRoutedEventArgs e) { return e.GetCurrentPoint(this).Properties.IsLeftButtonPressed; } Pretty compact, huh?\nLet’s consider the code line-by-line.\nWe create observables from events. The first two observables (down and up) generate the sequences when the mouse left button is pressed and released. The third (move) generates the sequence while the mouse button isn’t released.\nThe logic is as follows: for each down event subscribe to the move event and pass the result to the SetOffset method to apply the drag result. mouseMoveDisposable is used to keep the reference to this subscription to dispose it after all.\nLet’s consider the example where an object is placed at the center of the control:\nx = ActualWidth / 2; y = ActualWidth / 2; We can use an offset to move an object:\nx = offsetX + ActualWidth / 2; y = offsetY + ActualWidth / 2; All we need is to update the offset as the mouse moves. The following methods implement capturing the initial position, handling the offset and applying the result:\nprivate Point GetStartPoint(PointerRoutedEventArgs eventArgs) { var start = eventArgs.GetCurrentPoint(this).Position; // the coordinates where the mouse key is pressed return new Point(start.X, start.Y); } private Point CalculateDelta(Point start, PointerRoutedEventArgs eventArgs) { var current = eventArgs.GetCurrentPoint(this).Position; // calculate the delta from the start and the current mouse pointer positions return new Point(current.X - start.X, current.Y - start.Y); } private void SetOffset(double x, double y) { // apply the offset offsetX = x; offsetY = y; // update the control Invalidate(); } But there is one critical problem with this code.\nWhen applying an offset, the object is moved away from the center by (offsetX, offsetY). But this will only work once: offsetX and offsetY are actually just the delta of the mouse pointer position from the mouse down and mouse up events. If a user tries to move the object again, it will be moved away from the center again (instead of its current position).\nLet’s update GetStartPoint method in the following way:\nprivate Point GetStartPoint(PointerRoutedEventArgs eventArgs) { var start = eventArgs.GetCurrentPoint(this).Position; return new Point(start.X - offsetX, start.Y - offsetY); } In this case, we capture not only the position of the mouse pointer but also the offset.\nAnd… that’s it. A very simple and compact solution!\nLearn Reactive Programming with the Reactive Extensions for .NET\n",
+  "wordCount" : "552",
+  "inLanguage": "en",
+  "datePublished": "2025-01-26T12:00:00+05:00",
+  "dateModified": "2025-01-26T12:00:00+05:00",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://albertakhmetov.com/posts/2025/mouse-drag-with-reactive-extensions/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Albert Akhmetov",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://albertakhmetov.com/favicon.ico"
+    }
+  }
+}
+</script>
+</head>
+
+<body class="" id="top">
+<script>
+    if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark');
+    }
+
+</script>
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="https://albertakhmetov.com/" accesskey="h" title="Albert Akhmetov (Alt + H)">Albert Akhmetov</a>
+            <div class="logo-switches">
+            </div>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="https://albertakhmetov.com/posts/introduce" title="about me">
+                    <span>about me</span>
+                </a>
+            </li>
+            <li>
+                <a href="https://albertakhmetov.com/tags" title="tags">
+                    <span>tags</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    
+    <h1 class="post-title entry-hint-parent">
+      Mouse drag with Reactive Extensions
+    </h1>
+    <div class="post-meta"><span title='2025-01-26 12:00:00 +0500 +05'>January 26, 2025</span>
+
+</div>
+  </header> 
+  <div class="post-content"><p>Let&rsquo;s consider how to implement the ability to drag items with <a href="https://github.com/dotnet/reactive">Rx.NET</a>.</p>
+<p>The classic way to implement the drag and drop functionality is to implement event handlers for mouse down, mouse up and mouse move events. Then save the current drag state (enable it when the mouse button is pressed and disable it when the mouse button is released) and handle a mouse movement.</p>
+<p>Using <a href="https://github.com/dotnet/reactive">Rx.NET</a>, you can create the same logic in a more compact form.</p>
+<p>This example assumes using WinUI to create the UI. Other frameworks have different mouse event arguments.</p>
+<p>Add the <a href="https://www.nuget.org/packages/System.Reactive/">NuGet package</a> to start using Rx.NET:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cmd" data-lang="cmd"><span style="display:flex;"><span>dotnet add package System.Reactive --version 6.0.1
+</span></span></code></pre></div><p>You also need to use the following namespace:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C#" data-lang="C#"><span style="display:flex;"><span><span style="color:#66d9ef">using</span> System.Reactive.Linq;
+</span></span></code></pre></div><p>The following code implements the drag and drop logic:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C#" data-lang="C#"><span style="display:flex;"><span><span style="color:#66d9ef">var</span> down = Observable
+</span></span><span style="display:flex;"><span>    .FromEventPattern&lt;PointerRoutedEventArgs&gt;(<span style="color:#66d9ef">this</span>, nameof(Control.PointerPressed))
+</span></span><span style="display:flex;"><span>    .Where(i =&gt; IsLeftButton(i.EventArgs));
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">var</span> up = Observable
+</span></span><span style="display:flex;"><span>    .FromEventPattern&lt;PointerRoutedEventArgs&gt;(<span style="color:#66d9ef">this</span>, nameof(Control.PointerReleased))
+</span></span><span style="display:flex;"><span>    .Where(i =&gt; IsLeftButton(i.EventArgs));
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">var</span> move = Observable
+</span></span><span style="display:flex;"><span>    .FromEventPattern&lt;PointerRoutedEventArgs&gt;(<span style="color:#66d9ef">this</span>, nameof(Control.PointerMoved))
+</span></span><span style="display:flex;"><span>    .Where(i =&gt; IsLeftButton(i.EventArgs))
+</span></span><span style="display:flex;"><span>    .TakeUntil(up);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>mouseMoveDisposable = down.Select(i =&gt; GetStartPoint(i.EventArgs))
+</span></span><span style="display:flex;"><span>    .SelectMany(start =&gt; move.Select(i =&gt; CalculateDelta(start, i.EventArgs)))
+</span></span><span style="display:flex;"><span>    .Subscribe(i =&gt; SetOffset(i.X, i.Y));
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">private</span> <span style="color:#66d9ef">bool</span> IsLeftButton(PointerRoutedEventArgs e)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> e.GetCurrentPoint(<span style="color:#66d9ef">this</span>).Properties.IsLeftButtonPressed;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>Pretty compact, huh?</p>
+<p>Let&rsquo;s consider the code line-by-line.</p>
+<p>We create observables from events. The first two observables (<code>down</code> and <code>up</code>) generate the sequences when the mouse <em>left</em> button is pressed and released. The third (<code>move</code>) generates the sequence while the mouse button isn&rsquo;t released.</p>
+<p>The logic is as follows: for each <code>down</code> event subscribe to the <code>move</code> event and pass the result to the <code>SetOffset</code> method to apply the drag result. <code>mouseMoveDisposable</code> is used to keep the reference to this subscription to dispose it after all.</p>
+<p>Let&rsquo;s consider the example where an object is placed at the center of the control:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C#" data-lang="C#"><span style="display:flex;"><span>x = ActualWidth / <span style="color:#ae81ff">2</span>;
+</span></span><span style="display:flex;"><span>y = ActualWidth / <span style="color:#ae81ff">2</span>;
+</span></span></code></pre></div><p>We can use an offset to move an object:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C#" data-lang="C#"><span style="display:flex;"><span>x = offsetX + ActualWidth / <span style="color:#ae81ff">2</span>;
+</span></span><span style="display:flex;"><span>y = offsetY + ActualWidth / <span style="color:#ae81ff">2</span>;
+</span></span></code></pre></div><p>All we need is to update the offset as the mouse moves. The following methods implement capturing the initial position, handling the offset and applying the result:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C#" data-lang="C#"><span style="display:flex;"><span><span style="color:#66d9ef">private</span> Point GetStartPoint(PointerRoutedEventArgs eventArgs)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">var</span> start = eventArgs.GetCurrentPoint(<span style="color:#66d9ef">this</span>).Position;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// the coordinates where the mouse key is pressed</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">new</span> Point(start.X, start.Y);
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">private</span> Point CalculateDelta(Point start, PointerRoutedEventArgs eventArgs)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">var</span> current = eventArgs.GetCurrentPoint(<span style="color:#66d9ef">this</span>).Position;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// calculate the delta from the start and the current mouse pointer positions</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">new</span> Point(current.X - start.X, current.Y - start.Y);
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">private</span> <span style="color:#66d9ef">void</span> SetOffset(<span style="color:#66d9ef">double</span> x, <span style="color:#66d9ef">double</span> y)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// apply the offset</span>
+</span></span><span style="display:flex;"><span>    offsetX = x;
+</span></span><span style="display:flex;"><span>    offsetY = y;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// update the control</span>
+</span></span><span style="display:flex;"><span>    Invalidate();
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>But there is one critical problem with this code.</p>
+<p>When applying an offset, the object is moved away from the center by (offsetX, offsetY). But this will only work once: offsetX and offsetY are actually just the delta of the mouse pointer position from the mouse down and mouse up events. If a user tries to move the object again, it will be moved away from the center again (instead of its current position).</p>
+<p>Let&rsquo;s update <code>GetStartPoint</code> method in the following way:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C#" data-lang="C#"><span style="display:flex;"><span><span style="color:#66d9ef">private</span> Point GetStartPoint(PointerRoutedEventArgs eventArgs)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">var</span> start = eventArgs.GetCurrentPoint(<span style="color:#66d9ef">this</span>).Position;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">new</span> Point(start.X - offsetX, start.Y - offsetY);
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>In this case, we capture not only the position of the mouse pointer but also the offset.</p>
+<p>And&hellip; that&rsquo;s it. A very simple and compact solution!</p>
+<p><a href="https://introtorx.com/">Learn Reactive Programming with the Reactive Extensions for .NET</a></p>
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+      <li><a href="https://albertakhmetov.com/tags/c%23/">C#</a></li>
+      <li><a href="https://albertakhmetov.com/tags/.net/">.NET</a></li>
+      <li><a href="https://albertakhmetov.com/tags/rx.net/">Rx.NET</a></li>
+    </ul>
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+        <span>&copy; 2025 <a href="https://albertakhmetov.com/">Albert Akhmetov</a></span> · 
+
+    <span>
+        Powered by
+        <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
+        <a href="https://github.com/adityatelange/hugo-PaperMod/" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu')
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = 'copy';
+
+        function copyingDone() {
+            copybutton.innerHTML = 'copied!';
+            setTimeout(() => {
+                copybutton.innerHTML = 'copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+
+        if (container.classList.contains("highlight")) {
+            container.appendChild(copybutton);
+        } else if (container.parentNode.firstChild == container) {
+            
+        } else if (codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName == "TABLE") {
+            
+            codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.appendChild(copybutton);
+        } else {
+            
+            codeblock.parentNode.appendChild(copybutton);
+        }
+    });
+</script>
+</body>
+
+</html>
