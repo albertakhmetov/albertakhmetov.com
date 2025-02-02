@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>ContentDialog and MVVM in WinUI | Albert Akhmetov</title>
+<meta name="keywords" content="How to use ContentDialog with MVVM in WinUI 3, ContentDialog in WinUI">
+<meta name="description" content="Let&rsquo;s use ContentDialog in MVVM pattern style!">
+<meta name="author" content="">
+<link rel="canonical" href="https://albertakhmetov.com/posts/2025/contentdialog-and-mvvm-in-winui/">
+<link crossorigin="anonymous" href="/assets/css/stylesheet.css" rel="preload stylesheet" as="style">
+<link rel="icon" href="https://albertakhmetov.com/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="https://albertakhmetov.com/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://albertakhmetov.com/favicon-32x32.png">
+<link rel="apple-touch-icon" href="https://albertakhmetov.com/apple-touch-icon.png">
+<link rel="mask-icon" href="https://albertakhmetov.com/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<link rel="alternate" hreflang="en" href="https://albertakhmetov.com/posts/2025/contentdialog-and-mvvm-in-winui/">
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --code-block-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-track {
+                background: 0 0;
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-thumb {
+                border-color: var(--theme);
+            }
+        }
+
+    </style>
+</noscript><meta property="og:title" content="ContentDialog and MVVM in WinUI" />
+<meta property="og:description" content="Let&rsquo;s use ContentDialog in MVVM pattern style!" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://albertakhmetov.com/posts/2025/contentdialog-and-mvvm-in-winui/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2025-02-02T12:00:00+05:00" />
+<meta property="article:modified_time" content="2025-02-02T12:00:00+05:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="ContentDialog and MVVM in WinUI"/>
+<meta name="twitter:description" content="Let&rsquo;s use ContentDialog in MVVM pattern style!"/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Posts",
+      "item": "https://albertakhmetov.com/posts/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "ContentDialog and MVVM in WinUI",
+      "item": "https://albertakhmetov.com/posts/2025/contentdialog-and-mvvm-in-winui/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "ContentDialog and MVVM in WinUI",
+  "name": "ContentDialog and MVVM in WinUI",
+  "description": "Let\u0026rsquo;s use ContentDialog in MVVM pattern style!\n",
+  "keywords": [
+    "How to use ContentDialog with MVVM in WinUI 3", "ContentDialog in WinUI"
+  ],
+  "articleBody": "Let’s use ContentDialog in MVVM pattern style!\nMVVM pattern supposes that the view model doesn’t know about a view. Therefore, if the view model wants to show a dialog window it just calls something like ShowDialog and doesn’t care how this dialog is implemented. ContentDialog is tight coupled to the view. To decomposite this relation I prefer to use a service pattern:\npublic interface IDialogService { Task\u003cbool\u003e Show(DialogViewModel viewModel); } Show method shows a dialog and returns true if a user clicked the primary button, and false otherwise. The custom enumeration is required to support the second button.\nDialogViewModel is a base class for all the dialog view models. It implements the interaction with dialog buttons:\npublic abstract class DialogViewModel : ObservableObject { private bool isPrimaryEnabled; private string primaryText, closeText; protected DialogViewModel() { PrimaryCommand = new RelayCommand(OnPrimaryExecuted); isPrimaryEnabled = true; primaryText = \"Ok\"; closeText = \"Cancel\"; } public ICommand PrimaryCommand { get; } public bool IsPrimaryEnabled { get =\u003e isPrimaryEnabled; protected set =\u003e Set(ref isPrimaryEnabled, value); } public string PrimaryText { get =\u003e primaryText; protected set =\u003e Set(ref primaryText, value); } public string CloseText { get =\u003e closeText; protected set =\u003e Set(ref closeText, value); } protected abstract void OnPrimaryExecuted(object? parameter); } This view model allows to control the state of the primary button and the text of the primary and close buttons. Also it provides an abstract method that is invoked when the primary button is clicked. ObservableObject class just provides the implementation of INPC pattern (see the full sample for details).\nThe possible implementation of IDialogService interface is the following:\ninternal class DialogService : IDialogService { private readonly IServiceProvider serviceProvider; public DialogService(IServiceProvider serviceProvider) { this.serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider)); } public async Task\u003cbool\u003e Show(DialogViewModel viewModel) { ContentDialog dialog = new ContentDialog { DataContext = viewModel, Content = serviceProvider.GetRequiredKeyedService(viewModel.GetType().Name), XamlRoot = serviceProvider.GetRequiredService().XamlRoot }; BindProperty( dialog, ContentDialog.PrimaryButtonCommandProperty, nameof(DialogViewModel.PrimaryCommand), BindingMode.OneTime); BindProperty( dialog, ContentDialog.IsPrimaryButtonEnabledProperty, nameof(DialogViewModel.IsPrimaryEnabled), BindingMode.OneWay); BindProperty( dialog, ContentDialog.PrimaryButtonTextProperty, nameof(DialogViewModel.PrimaryText), BindingMode.OneWay); BindProperty( dialog, ContentDialog.CloseButtonTextProperty, nameof(DialogViewModel.CloseText), BindingMode.OneWay); var result = await dialog.ShowAsync(); dialog.Content = null; return result == ContentDialogResult.Primary; } private void BindProperty( ContentDialog contentDialog, DependencyProperty property, string path, BindingMode mode) { contentDialog.SetBinding( property, new Binding { Path = new PropertyPath(path), Mode = mode }); } } ContentDialog object is created and its properties are binded to the view model properties. Btw, this sample is based on the post about DI in WinUI with some additions.\nXamlRoot property is provided by IApp interface. For the single window application dialogs are shown in the main window, so XamlRoot is the value of the content property of the main window.\nContent property is set with the view associated with the given view model. Keyed services are used to implement this behaviour:\n// Add view models builder.Services.AddTransient(); // Add views builder.Services.AddKeyedSingleton(nameof(ViewModels.IconSizeViewModel)); The view is registered with the name of the view model that is associated with it. Note that the view model is registered as transient (the new view model is created for every request) and the view is registered as singleton (one view per an app). This is a controversial decision, and I don’t know if it’s for better or worse. Anyway, the single instance of the view requires to unlink it from ContentDialog:\ndialog.Content = null; Let’s consider the example of this architecture usage. IconSizeViewModel view model provides the ability to select one or more icon sizes from the list. A user can’t click the primary button if there is no selected item in the list:\nIconSizeViewModel view model is the following:\npublic class IconSizeViewModel : DialogViewModel { public IconSizeViewModel() { IsPrimaryEnabled = false; Items = new Item[] { new(this) { Text=\"32x32\" }, new(this) { Text=\"48x48\" }, new(this) { Text=\"64x64\" }, new(this) { Text=\"256x256\" }, }.AsReadOnly(); } public IReadOnlyCollection Items { get; } protected override void OnPrimaryExecuted(object? parameter) { ; // primary button is clicked } private void OnItemSelected() { IsPrimaryEnabled = Items.Any(i =\u003e i.IsSelected); } public sealed class Item : ObservableObject { private readonly IconSizeViewModel owner; private bool isSelected = false; private string? text; public Item(IconSizeViewModel owner) { this.owner = owner ?? throw new ArgumentNullException(nameof(owner)); } public bool IsSelected { get =\u003e isSelected; set { if (Set(ref isSelected, value)) { owner.OnItemSelected(); } } } public string? Text { get =\u003e text; set =\u003e Set(ref text, value); } } } In the view model constructor the primary button is disabled (as no item is selected by default):\nIsPrimaryEnabled = false; Item class stores a text and state of the list item. When the state changes, this class invokes the parent’s OnItemSelected method to update the state of the primary button.\nThe view is as simple as possible:\n",
+  "wordCount" : "962",
+  "inLanguage": "en",
+  "datePublished": "2025-02-02T12:00:00+05:00",
+  "dateModified": "2025-02-02T12:00:00+05:00",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://albertakhmetov.com/posts/2025/contentdialog-and-mvvm-in-winui/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Albert Akhmetov",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://albertakhmetov.com/favicon.ico"
+    }
+  }
+}
+</script>
+</head>
+
+<body class="" id="top">
+<script>
+    if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark');
+    }
+
+</script>
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="https://albertakhmetov.com/" accesskey="h" title="Albert Akhmetov (Alt + H)">Albert Akhmetov</a>
+            <div class="logo-switches">
+            </div>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="https://albertakhmetov.com/posts/introduce" title="about me">
+                    <span>about me</span>
+                </a>
+            </li>
+            <li>
+                <a href="https://albertakhmetov.com/tags" title="tags">
+                    <span>tags</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    
+    <h1 class="post-title entry-hint-parent">
+      ContentDialog and MVVM in WinUI
+    </h1>
+    <div class="post-meta"><span title='2025-02-02 12:00:00 +0500 +05'>February 2, 2025</span>
+
+</div>
+  </header> 
+  <div class="post-content"><p>Let&rsquo;s use <code>ContentDialog</code> in MVVM pattern style!</p>
+<p>MVVM pattern supposes that the view model doesn&rsquo;t know about a view. Therefore, if the view model wants to show a dialog window it just calls something like <code>ShowDialog</code> and doesn&rsquo;t care how this dialog is implemented. <code>ContentDialog</code> is tight coupled to the view. To decomposite this relation I prefer to use a service pattern:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c#" data-lang="c#"><span style="display:flex;"><span><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">interface</span> <span style="color:#a6e22e">IDialogService</span>
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    Task&lt;<span style="color:#66d9ef">bool</span>&gt; Show(DialogViewModel viewModel);
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p><code>Show</code> method shows a dialog and returns <code>true</code> if a user clicked the primary button, and <code>false</code> otherwise. The custom enumeration is required to support the second button.</p>
+<p><code>DialogViewModel</code> is a base class for all the dialog view models. It implements the interaction with dialog buttons:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c#" data-lang="c#"><span style="display:flex;"><span><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">abstract</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">DialogViewModel</span> : ObservableObject
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">bool</span> isPrimaryEnabled;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">string</span> primaryText, closeText;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">protected</span> DialogViewModel()
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        PrimaryCommand = <span style="color:#66d9ef">new</span> RelayCommand(OnPrimaryExecuted);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        isPrimaryEnabled = <span style="color:#66d9ef">true</span>;
+</span></span><span style="display:flex;"><span>        primaryText = <span style="color:#e6db74">&#34;Ok&#34;</span>;
+</span></span><span style="display:flex;"><span>        closeText = <span style="color:#e6db74">&#34;Cancel&#34;</span>;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> ICommand PrimaryCommand { <span style="color:#66d9ef">get</span>; }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">bool</span> IsPrimaryEnabled
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">get</span> =&gt; isPrimaryEnabled;
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">protected</span> <span style="color:#66d9ef">set</span> =&gt; Set(<span style="color:#66d9ef">ref</span> isPrimaryEnabled, <span style="color:#66d9ef">value</span>);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">string</span> PrimaryText
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">get</span> =&gt; primaryText;
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">protected</span> <span style="color:#66d9ef">set</span> =&gt; Set(<span style="color:#66d9ef">ref</span> primaryText, <span style="color:#66d9ef">value</span>);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">string</span> CloseText
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">get</span> =&gt; closeText;
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">protected</span> <span style="color:#66d9ef">set</span> =&gt; Set(<span style="color:#66d9ef">ref</span> closeText, <span style="color:#66d9ef">value</span>);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">protected</span> <span style="color:#66d9ef">abstract</span> <span style="color:#66d9ef">void</span> OnPrimaryExecuted(<span style="color:#66d9ef">object?</span> parameter);
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>This view model allows to control the state of the primary button and the text of the primary and close buttons. Also it provides an abstract method that is invoked when the primary button is clicked. <code>ObservableObject</code> class just provides the implementation of INPC pattern (see the full sample for details).</p>
+<p>The possible implementation of <code>IDialogService</code> interface is the following:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c#" data-lang="c#"><span style="display:flex;"><span><span style="color:#66d9ef">internal</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">DialogService</span> : IDialogService
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">readonly</span> IServiceProvider serviceProvider;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> DialogService(IServiceProvider serviceProvider)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">this</span>.serviceProvider = serviceProvider ?? <span style="color:#66d9ef">throw</span> <span style="color:#66d9ef">new</span> ArgumentNullException(nameof(serviceProvider));
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">async</span> Task&lt;<span style="color:#66d9ef">bool</span>&gt; Show(DialogViewModel viewModel)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        ContentDialog dialog = <span style="color:#66d9ef">new</span> ContentDialog
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            DataContext = viewModel,
+</span></span><span style="display:flex;"><span>            Content = serviceProvider.GetRequiredKeyedService&lt;UserControl&gt;(viewModel.GetType().Name),
+</span></span><span style="display:flex;"><span>            XamlRoot = serviceProvider.GetRequiredService&lt;IApp&gt;().XamlRoot
+</span></span><span style="display:flex;"><span>        };
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        BindProperty(
+</span></span><span style="display:flex;"><span>            dialog,
+</span></span><span style="display:flex;"><span>            ContentDialog.PrimaryButtonCommandProperty,
+</span></span><span style="display:flex;"><span>            nameof(DialogViewModel.PrimaryCommand),
+</span></span><span style="display:flex;"><span>            BindingMode.OneTime);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        BindProperty(
+</span></span><span style="display:flex;"><span>            dialog,
+</span></span><span style="display:flex;"><span>            ContentDialog.IsPrimaryButtonEnabledProperty,
+</span></span><span style="display:flex;"><span>            nameof(DialogViewModel.IsPrimaryEnabled),
+</span></span><span style="display:flex;"><span>            BindingMode.OneWay);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        BindProperty(
+</span></span><span style="display:flex;"><span>            dialog,
+</span></span><span style="display:flex;"><span>            ContentDialog.PrimaryButtonTextProperty,
+</span></span><span style="display:flex;"><span>            nameof(DialogViewModel.PrimaryText),
+</span></span><span style="display:flex;"><span>            BindingMode.OneWay);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        BindProperty(
+</span></span><span style="display:flex;"><span>            dialog,
+</span></span><span style="display:flex;"><span>            ContentDialog.CloseButtonTextProperty,
+</span></span><span style="display:flex;"><span>            nameof(DialogViewModel.CloseText),
+</span></span><span style="display:flex;"><span>            BindingMode.OneWay);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">var</span> result = <span style="color:#66d9ef">await</span> dialog.ShowAsync();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        dialog.Content = <span style="color:#66d9ef">null</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> result == ContentDialogResult.Primary;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">void</span> BindProperty(
+</span></span><span style="display:flex;"><span>        ContentDialog contentDialog,
+</span></span><span style="display:flex;"><span>        DependencyProperty property,
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">string</span> path,
+</span></span><span style="display:flex;"><span>        BindingMode mode)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        contentDialog.SetBinding(
+</span></span><span style="display:flex;"><span>            property,
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">new</span> Binding
+</span></span><span style="display:flex;"><span>            {
+</span></span><span style="display:flex;"><span>                Path = <span style="color:#66d9ef">new</span> PropertyPath(path),
+</span></span><span style="display:flex;"><span>                Mode = mode
+</span></span><span style="display:flex;"><span>            });
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p><code>ContentDialog</code> object is created and its properties are binded to the view model properties. Btw, this sample is based on the post about <a href="https://albertakhmetov.com/posts/2024/using-.net-build-in-dependency-injection-with-winui-apps/">DI in WinUI</a> with some additions.</p>
+<p><code>XamlRoot</code> property is provided by <code>IApp</code> interface. For the single window application dialogs are shown in the main window, so <code>XamlRoot</code> is the value of the content property of the main window.</p>
+<p><code>Content</code> property is set with the view associated with the given view model. <a href="https://learn.microsoft.com/en-us/aspnet/core/fundamentals/dependency-injection?view=aspnetcore-9.0#keyed-services">Keyed services</a> are used to implement this behaviour:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c#" data-lang="c#"><span style="display:flex;"><span><span style="color:#75715e">// Add view models</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>builder.Services.AddTransient&lt;ViewModels.IconSizeViewModel&gt;();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Add views</span>
+</span></span><span style="display:flex;"><span>builder.Services.AddKeyedSingleton&lt;UserControl, Views.IconSizeView&gt;(nameof(ViewModels.IconSizeViewModel));
+</span></span></code></pre></div><p>The view is registered with the name of the view model that is associated with it. Note that the view model is registered as <code>transient</code> (the new view model is created for every request) and the view is registered as <code>singleton</code> (one view per an app). This is a controversial decision, and I don&rsquo;t know if it&rsquo;s for better or worse. Anyway, the single instance of the view requires to unlink it from <code>ContentDialog</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c#" data-lang="c#"><span style="display:flex;"><span>dialog.Content = <span style="color:#66d9ef">null</span>;
+</span></span></code></pre></div><p>Let&rsquo;s consider the example of this architecture usage. <code>IconSizeViewModel</code> view model provides the ability to select one or more icon sizes from the list. A user can&rsquo;t click the primary button if there is no selected item in the list:</p>
+<p><img loading="lazy" src="dialog.png#center" alt="Dialog Window"  />
+</p>
+<p><code>IconSizeViewModel</code> view model is the following:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c#" data-lang="c#"><span style="display:flex;"><span><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">IconSizeViewModel</span> : DialogViewModel
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> IconSizeViewModel()
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        IsPrimaryEnabled = <span style="color:#66d9ef">false</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        Items = <span style="color:#66d9ef">new</span> Item[] {
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">new</span>(<span style="color:#66d9ef">this</span>) { Text=<span style="color:#e6db74">&#34;32x32&#34;</span> },
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">new</span>(<span style="color:#66d9ef">this</span>) { Text=<span style="color:#e6db74">&#34;48x48&#34;</span> },
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">new</span>(<span style="color:#66d9ef">this</span>) { Text=<span style="color:#e6db74">&#34;64x64&#34;</span> },
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">new</span>(<span style="color:#66d9ef">this</span>) { Text=<span style="color:#e6db74">&#34;256x256&#34;</span> },
+</span></span><span style="display:flex;"><span>        }.AsReadOnly();
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> IReadOnlyCollection&lt;Item&gt; Items { <span style="color:#66d9ef">get</span>; }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">protected</span> <span style="color:#66d9ef">override</span> <span style="color:#66d9ef">void</span> OnPrimaryExecuted(<span style="color:#66d9ef">object?</span> parameter)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        ; <span style="color:#75715e">// primary button is clicked</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">void</span> OnItemSelected()
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        IsPrimaryEnabled = Items.Any(i =&gt; i.IsSelected);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">sealed</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Item</span> : ObservableObject
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">readonly</span> IconSizeViewModel owner;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">bool</span> isSelected = <span style="color:#66d9ef">false</span>;
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">string?</span> text;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">public</span> Item(IconSizeViewModel owner)
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">this</span>.owner = owner ?? <span style="color:#66d9ef">throw</span> <span style="color:#66d9ef">new</span> ArgumentNullException(nameof(owner));
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">bool</span> IsSelected
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">get</span> =&gt; isSelected;
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">set</span>
+</span></span><span style="display:flex;"><span>            {
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">if</span> (Set(<span style="color:#66d9ef">ref</span> isSelected, <span style="color:#66d9ef">value</span>))
+</span></span><span style="display:flex;"><span>                {
+</span></span><span style="display:flex;"><span>                    owner.OnItemSelected();
+</span></span><span style="display:flex;"><span>                }
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">string?</span> Text
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">get</span> =&gt; text;
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">set</span> =&gt; Set(<span style="color:#66d9ef">ref</span> text, <span style="color:#66d9ef">value</span>);
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>In the view model constructor the primary button is disabled (as no item is selected by default):</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c#" data-lang="c#"><span style="display:flex;"><span>IsPrimaryEnabled = <span style="color:#66d9ef">false</span>;
+</span></span></code></pre></div><p><code>Item</code> class stores a text and state of the list item. When the state changes, this class invokes the parent&rsquo;s <code>OnItemSelected</code> method to update the state of the primary button.</p>
+<p>The view is as simple as possible:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-xml" data-lang="xml"><span style="display:flex;"><span><span style="color:#f92672">&lt;Grid&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&lt;ListView</span> 
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">Grid.Column=</span><span style="color:#e6db74">&#34;1&#34;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">SelectionMode=</span><span style="color:#e6db74">&#34;Multiple&#34;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">IsMultiSelectCheckBoxEnabled=</span><span style="color:#e6db74">&#34;True&#34;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">ItemsSource=</span><span style="color:#e6db74">&#34;{Binding Items, Mode=OneTime}&#34;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">SelectedValuePath=</span><span style="color:#e6db74">&#34;IsSelected&#34;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">DisplayMemberPath=</span><span style="color:#e6db74">&#34;Text&#34;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">SelectionChanged=</span><span style="color:#e6db74">&#34;ListView_SelectionChanged&#34;</span><span style="color:#f92672">&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&lt;/ListView&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">&lt;/Grid&gt;</span>
+</span></span></code></pre></div><p>It&rsquo;s represented by the list view with checkboxes. Some of the code in the view is used to implement the checkbox state binding:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c#" data-lang="c#"><span style="display:flex;"><span><span style="color:#66d9ef">private</span> <span style="color:#66d9ef">void</span> ListView_SelectionChanged(<span style="color:#66d9ef">object</span> sender, SelectionChangedEventArgs e)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">foreach</span> (<span style="color:#66d9ef">var</span> i <span style="color:#66d9ef">in</span> e.AddedItems)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> (i <span style="color:#66d9ef">is</span> IconSizeViewModel.Item item)
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            item.IsSelected = <span style="color:#66d9ef">true</span>;
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">foreach</span> (<span style="color:#66d9ef">var</span> i <span style="color:#66d9ef">in</span> e.RemovedItems)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> (i <span style="color:#66d9ef">is</span> IconSizeViewModel.Item item)
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            item.IsSelected = <span style="color:#66d9ef">false</span>;
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>This code sets the value to <code>IsSelected</code> corresponding to the state of the checkbox. This is a simplification. In a real project we need to at least bind the initial states of the items to the checkboxes. Also it&rsquo;s preferable to use behaviours to avoid using the code in views.</p>
+<p>Finally, to display a dialog from the view, the following code is used:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c#" data-lang="c#"><span style="display:flex;"><span><span style="color:#66d9ef">var</span> model = serviceProvider.GetRequiredService&lt;IconSizeViewModel&gt;();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> (<span style="color:#66d9ef">await</span> dialogService.Show(model) == <span style="color:#66d9ef">true</span>)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    Text = <span style="color:#e6db74">$&#34;Ok is clicked. Selected: {string.Join(&#34;</span>, <span style="color:#e6db74">&#34;, model.Items.Where(i =&gt; i.IsSelected).Select(i =&gt; i.Text))}&#34;</span>;
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">else</span>
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    Text = <span style="color:#e6db74">&#34;Cancel is clicked&#34;</span>;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>This code displays the clicked button and the list of selected items (if the primary button is clicked).</p>
+<p>The full sample code available <a href="https://github.com/albertakhmetov/albertakhmetov.com/tree/main/ContentDialogMvvm">here</a>.</p>
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+      <li><a href="https://albertakhmetov.com/tags/c%23/">C#</a></li>
+      <li><a href="https://albertakhmetov.com/tags/.net/">.NET</a></li>
+      <li><a href="https://albertakhmetov.com/tags/winui/">WinUI</a></li>
+    </ul>
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+        <span>&copy; 2025 <a href="https://albertakhmetov.com/">Albert Akhmetov</a></span> · 
+
+    <span>
+        Powered by
+        <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
+        <a href="https://github.com/adityatelange/hugo-PaperMod/" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu')
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = 'copy';
+
+        function copyingDone() {
+            copybutton.innerHTML = 'copied!';
+            setTimeout(() => {
+                copybutton.innerHTML = 'copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+
+        if (container.classList.contains("highlight")) {
+            container.appendChild(copybutton);
+        } else if (container.parentNode.firstChild == container) {
+            
+        } else if (codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName == "TABLE") {
+            
+            codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.appendChild(copybutton);
+        } else {
+            
+            codeblock.parentNode.appendChild(copybutton);
+        }
+    });
+</script>
+</body>
+
+</html>
