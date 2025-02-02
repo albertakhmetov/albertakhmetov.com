@@ -1,0 +1,19 @@
+<Window
+    x:Class="ContentDialogMvvm.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:ContentDialogMvvm"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+    <Window.SystemBackdrop>
+        <MicaBackdrop />
+    </Window.SystemBackdrop>
+
+    <StackPanel x:Name="Root" VerticalAlignment="Center" HorizontalAlignment="Center">
+        <TextBlock Margin="0,0,0,50" Text="{x:Bind ViewModel.Text, Mode=OneWay}"/>
+
+        <Button HorizontalAlignment="Center" Content="Show Dialog" Command="{x:Bind ViewModel.ShowDialogCommand, Mode=OneTime}" />
+        <Button HorizontalAlignment="Center" Content="Exit" Command="{x:Bind ViewModel.ExitCommand, Mode=OneTime}" />
+    </StackPanel>
+</Window>

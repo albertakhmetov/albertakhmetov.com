@@ -1,0 +1,75 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<OutputType>WinExe</OutputType>
+		<TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
+		<ApplicationManifest>app.manifest</ApplicationManifest>
+		<Platforms>x64</Platforms>
+		<RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
+		<PlatformTarget>x64</PlatformTarget>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<UseWinUI>true</UseWinUI>
+		<EnableMsixTooling>true</EnableMsixTooling>
+		<WindowsPackageType>None</WindowsPackageType>
+		<WindowsAppSdkSelfContained>true</WindowsAppSdkSelfContained>
+	</PropertyGroup>
+
+	<PropertyGroup>
+		<Copyright>© 2025, Albert Akhmetov</Copyright>
+		<Authors>Albert Akhmetov</Authors>
+		<Product>DependencyInjection Demo App</Product>
+		<Version>0.1.0</Version>
+		<PackageIcon></PackageIcon>
+		<PackageIconUrl />
+	</PropertyGroup>
+
+	<PropertyGroup>
+		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+		<LangVersion>12</LangVersion>
+		<AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+		<SupportedOSPlatformVersion>10.0.19041.0</SupportedOSPlatformVersion>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+		<Optimize>False</Optimize>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+		<Optimize>True</Optimize>
+		<DebugType>none</DebugType>
+	</PropertyGroup>
+
+	<PropertyGroup>
+		<!-- Use our own Main entry point so we can control the IHostBuilder -->
+		<DefineConstants>DISABLE_XAML_GENERATED_MAIN</DefineConstants>
+		<StartupObject>ContentDialogMvvm.App</StartupObject>
+	</PropertyGroup>
+
+	<ItemGroup>
+	  <None Remove="Views\IconSizeView.xaml" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.WindowsAppSDK" Version="1.6.240923002" />
+		<PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.1742" />
+		<Manifest Include="$(ApplicationManifest)" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Update="App.xaml">
+			<Generator>MSBuild:Compile</Generator>
+		</None>
+		<Page Update="Views\IconSizeView.xaml">
+		  <Generator>MSBuild:Compile</Generator>
+		</Page>
+		<Page Update="MainWindow.xaml">
+			<Generator>MSBuild:Compile</Generator>
+		</Page>
+	</ItemGroup>
+
+</Project>
