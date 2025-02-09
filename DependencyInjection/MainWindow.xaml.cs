@@ -1,22 +1,29 @@
-namespace DependencyInjection;
+﻿namespace DependencyInjection;
 
-using System.ComponentModel;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
-using DependencyInjection.Services;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
 
-public sealed partial class MainWindow : Window
+public partial class MainWindow : Window
 {
-    private IApp app;
+    private readonly IApp app;
 
     public MainWindow(IApp app)
     {
-        this.app = app ?? throw new ArgumentNullException(nameof(app));
+        this.app = app;
 
-        InitializeComponent();
+        this.InitializeComponent();
     }
 
     private void Button_Click(object sender, RoutedEventArgs e)
+    {
+        throw new Exception();
+    }
+
+    private void ExitButton_Click(object sender, RoutedEventArgs e)
     {
         app.Exit();
     }

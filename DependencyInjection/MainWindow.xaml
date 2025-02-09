@@ -9,8 +9,10 @@
     <Window.SystemBackdrop>
         <MicaBackdrop />
     </Window.SystemBackdrop>
-
     <Grid>
-        <Button VerticalAlignment="Center" HorizontalAlignment="Center" Content="Exit" Click="Button_Click" />
+        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+            <Button Click="Button_Click" Content="Click to exception"/>
+            <Button Click="ExitButton_Click" Content="Click to exit"/>
+        </StackPanel>
     </Grid>
 </Window>

@@ -1,59 +1,91 @@
-﻿namespace DependencyInjection;
+namespace DependencyInjection;
 
 using System;
+using System.Collections.Immutable;
+using System.Text;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.UI;
+using Microsoft.UI.Dispatching;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
 using Microsoft.Windows.AppLifecycle;
-using DependencyInjection.Services;
 using WinRT.Interop;
 
 public partial class App : Application, IApp
 {
+    [STAThread]
     public static void Main(string[] args)
     {
-        var builder = CreateBuilder(args);
+        WinRT.ComWrappersSupport.InitializeComWrappers();
 
-        var host = builder.Build();
-        host.Run();
+        try
+        {
+            Start(_ =>
+            {
+                var context = new DispatcherQueueSynchronizationContext(DispatcherQueue.GetForCurrentThread());
+                SynchronizationContext.SetSynchronizationContext(context);
+
+                var app = new App(args);
+                app.UnhandledException += (_, _) => StopHost();
+
+                host = CreateHost(app);
+            });
+        }
+        finally
+        {
+            StopHost();
+        }
     }
 
-    private static HostApplicationBuilder CreateBuilder(string[] args)
+    private static IHost CreateHost(IApp app)
     {
-        var builder = Host.CreateApplicationBuilder(args);
+        var builder = Host.CreateApplicationBuilder();
 
-        builder.Services.AddSingleton<IApp, App>();
+        builder.Services.AddSingleton<IApp>(app);
         builder.Services.AddSingleton<MainWindow>();
 
-        builder.Services.AddHostedService<AppService>();
-
-        return builder;
+        return builder.Build();
     }
 
-    private readonly IServiceProvider serviceProvider;
+    private static void StopHost()
+    {
+        host?.StopAsync().Wait();
+        host?.Dispose();
+    }
+
+    private static IHost? host;
+
+    private readonly ImmutableArray<string> arguments;
     private MainWindow? mainWindow;
 
-    public App(IServiceProvider serviceProvider)
+    public App(string[] args)
     {
-        this.serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
+        this.arguments = ImmutableArray.Create(args);
 
         InitializeComponent();
     }
 
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
+        // The host should already be created by this time.
+        if (host == null)
+        {
+            throw new InvalidOperationException();
+        }
+
         base.OnLaunched(args);
 
-        mainWindow = serviceProvider.GetRequiredService<MainWindow>();
-        // The application exits when the main window closes.
+        mainWindow = host.Services.GetRequiredService<MainWindow>();
         mainWindow.Closed += OnMainWindowClosed;
         mainWindow.AppWindow.Show(true);
+
+        _ = host.RunAsync();
     }
 
     private void OnMainWindowClosed(object sender, WindowEventArgs args)
     {
-       Exit();
+        Exit();
     }
 }
