@@ -6,8 +6,15 @@
     <description>Recent content in Posts on Albert Akhmetov</description>
     <generator>Hugo -- 0.136.5</generator>
     <language>en-us</language>
-    <lastBuildDate>Sun, 02 Feb 2025 12:00:00 +0500</lastBuildDate>
+    <lastBuildDate>Sun, 09 Feb 2025 12:00:00 +0500</lastBuildDate>
     <atom:link href="https://albertakhmetov.com/posts/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>How to properly use .NET build-in dependency injection with WinUI apps</title>
+      <link>https://albertakhmetov.com/posts/2025/how-to-properly-use-.net-build-in-dependency-injection-with-winui-apps/</link>
+      <pubDate>Sun, 09 Feb 2025 12:00:00 +0500</pubDate>
+      <guid>https://albertakhmetov.com/posts/2025/how-to-properly-use-.net-build-in-dependency-injection-with-winui-apps/</guid>
+      <description>&lt;p&gt;This post is based on &lt;a href=&#34;https://albertakhmetov.com/posts/2024/using-.net-build-in-dependency-injection-with-winui-apps/&#34;&gt;Using .NET build-in dependency injection with WinUI apps&lt;/a&gt; and represents work on the mistakes made in the design of the approach described there.&lt;/p&gt;</description>
+    </item>
     <item>
       <title>ContentDialog and MVVM in WinUI</title>
       <link>https://albertakhmetov.com/posts/2025/contentdialog-and-mvvm-in-winui/</link>
