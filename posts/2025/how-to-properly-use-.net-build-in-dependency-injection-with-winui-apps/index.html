@@ -256,7 +256,7 @@
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></div><p>One downside of this approach is that we don&rsquo;t know exactly when all services will be started. For background tasks, this doesn&rsquo;t seem very critical (as far as I can tell). In other cases, this needs closer attention.</p>
 <p>And finally, I&rsquo;ll mention a small nuance about unpackaged apps.</p>
-<p>In theory, if a user wants to open a file using the application (via the &ldquo;Open With&rdquo; menu), the path will be passed through the LaunchActivatedEventArgs parameter of the OnLaunched method. However, this doesn&rsquo;t work for unpackaged apps.</p>
+<p>In theory, if a user wants to open a file using the application (via the &ldquo;Open With&rdquo; menu), the path will be passed through the <code>LaunchActivatedEventArgs</code> parameter of the <code>OnLaunched</code> method. However, this doesn&rsquo;t work for unpackaged apps.</p>
 <p>And here, the static <code>Main</code> method comes to the rescue! All we need to do is pass the args array to the App class so it can process it correctly. For example, we pass this array through the constructor and handle it in the OnLaunched method.</p>
 <p>The source code available <a href="https://github.com/albertakhmetov/albertakhmetov.com/tree/main/DependencyInjection">here</a>.</p>
 
