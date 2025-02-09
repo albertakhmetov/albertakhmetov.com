@@ -97,8 +97,8 @@
   "keywords": [
     "WinUI", "C#", ".NET", "DI", "IoC"
   ],
-  "articleBody": ".NET has build-in dependency injection (DI). It’s used primarily for ASP.NET Core apps, but there’s no reason not to use it with WinUI apps too.\nTo use DI you need to add package reference to the Microsoft.Extensions.DependencyInjection in the project file:\n",
-  "wordCount" : "650",
+  "articleBody": ".NET has build-in dependency injection (DI). It’s used primarily for ASP.NET Core apps, but there’s no reason not to use it with WinUI apps too.\nThis post is an example of how not to implement dependency injection (DI) in WinUI applications. Thread handling is implemented incorrectly, leading to hard-to-find errors. For example, this solution causes issues with drag-and-drop from the file explorer (it simply doesn’t work).\nI strongly advise against using this approach. You can read my updated thoughts on using dependency injection (DI) in WinUI in a new post.\nTo use DI you need to add package reference to the Microsoft.Extensions.DependencyInjection in the project file:\n",
+  "wordCount" : "715",
   "inLanguage": "en",
   "datePublished": "2024-11-09T12:00:00+05:00",
   "dateModified": "2024-11-09T12:00:00+05:00",
@@ -160,6 +160,10 @@
 </div>
   </header> 
   <div class="post-content"><p>.NET has build-in dependency injection (DI). It&rsquo;s used primarily for ASP.NET Core apps, but there&rsquo;s no reason not to use it with WinUI apps too.</p>
+<hr>
+<p>This post is an example of how <strong>not</strong> to implement dependency injection (DI) in WinUI applications. Thread handling is implemented incorrectly, leading to hard-to-find errors. For example, this solution causes issues with drag-and-drop from the file explorer (it simply doesn&rsquo;t work).</p>
+<p>I strongly advise against using this approach. You can read my updated thoughts on using dependency injection (DI) in WinUI in a <a href="https://albertakhmetov.com/posts/2025/how-to-properly-use-.net-build-in-dependency-injection-with-winui-apps/">new post</a>.</p>
+<hr>
 <p>To use DI you need to add package reference to the <a href="https://www.nuget.org/packages/Microsoft.Extensions.DependencyInjection">Microsoft.Extensions.DependencyInjection</a> in the project file:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-XML" data-lang="XML"><span style="display:flex;"><span><span style="color:#f92672">&lt;ItemGroup&gt;</span>
 </span></span><span style="display:flex;"><span>	<span style="color:#f92672">&lt;PackageReference</span> <span style="color:#a6e22e">Include=</span><span style="color:#e6db74">&#34;Microsoft.Extensions.Hosting&#34;</span> <span style="color:#a6e22e">Version=</span><span style="color:#e6db74">&#34;8.0.1&#34;</span> <span style="color:#f92672">/&gt;</span>
