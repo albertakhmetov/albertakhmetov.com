@@ -51,7 +51,6 @@ public partial class App : Application, IApp
 
     private static void StopHost()
     {
-        host?.StopAsync().Wait();
         host?.Dispose();
     }
 
@@ -80,8 +79,6 @@ public partial class App : Application, IApp
         mainWindow = host.Services.GetRequiredService<MainWindow>();
         mainWindow.Closed += OnMainWindowClosed;
         mainWindow.AppWindow.Show(true);
-
-        _ = host.RunAsync();
     }
 
     private void OnMainWindowClosed(object sender, WindowEventArgs args)
