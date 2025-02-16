@@ -1,0 +1,25 @@
+<Window
+    x:Class="Themes.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:Themes"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+    <Window.SystemBackdrop>
+        <MicaBackdrop />
+    </Window.SystemBackdrop>
+
+    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+        <StackPanel.Resources>
+            <Style TargetType="Button">
+                <Setter Property="Margin" Value="8,4"/>
+            </Style>
+        </StackPanel.Resources>
+
+        <Button HorizontalAlignment="Center" Content="Light" Click="Light_Click"/>
+        <Button HorizontalAlignment="Center" Content="Dark" Click="Dark_Click"/>
+        <Button HorizontalAlignment="Center" Content="App" Click="App_Click"/>
+        <Button HorizontalAlignment="Center" Content="System" Click="System_Click"/>
+    </StackPanel>
+</Window>

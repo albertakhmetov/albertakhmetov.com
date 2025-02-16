@@ -1,0 +1,7 @@
+DwmSetWindowAttribute
+
+RegisterClass
+UnregisterClass
+CreateWindowEx
+DestroyWindow
+DefWindowProc
