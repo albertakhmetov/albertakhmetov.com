@@ -6,8 +6,15 @@
     <description>Recent content in WinAPI on Albert Akhmetov</description>
     <generator>Hugo -- 0.136.5</generator>
     <language>en-us</language>
-    <lastBuildDate>Sun, 29 Dec 2024 12:00:00 +0500</lastBuildDate>
+    <lastBuildDate>Sun, 16 Feb 2025 12:00:00 +0500</lastBuildDate>
     <atom:link href="https://albertakhmetov.com/tags/winapi/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Switching Between Dark and Light Themes in a WinUI App</title>
+      <link>https://albertakhmetov.com/posts/2025/switching-between-dark-and-light-themes-in-a-winui-app/</link>
+      <pubDate>Sun, 16 Feb 2025 12:00:00 +0500</pubDate>
+      <guid>https://albertakhmetov.com/posts/2025/switching-between-dark-and-light-themes-in-a-winui-app/</guid>
+      <description>&lt;p&gt;In this note, we will look at how to switch between light and dark themes in a WinUI app.&lt;/p&gt;</description>
+    </item>
     <item>
       <title>How to extract a specific image from the icon file</title>
       <link>https://albertakhmetov.com/posts/2024/how-to-extract-a-specific-image-from-an-icon-file/</link>

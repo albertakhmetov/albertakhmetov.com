@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>Switching Between Dark and Light Themes in a WinUI App | Albert Akhmetov</title>
+<meta name="keywords" content="How to implement dark and light theme toggle in WinUI app, Step-by-step guide to switch themes in WinUI application, WinUI dark mode and light mode setup tutorial">
+<meta name="description" content="In this note, we will look at how to switch between light and dark themes in a WinUI app.">
+<meta name="author" content="">
+<link rel="canonical" href="https://albertakhmetov.com/posts/2025/switching-between-dark-and-light-themes-in-a-winui-app/">
+<link crossorigin="anonymous" href="/assets/css/stylesheet.css" rel="preload stylesheet" as="style">
+<link rel="icon" href="https://albertakhmetov.com/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="https://albertakhmetov.com/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://albertakhmetov.com/favicon-32x32.png">
+<link rel="apple-touch-icon" href="https://albertakhmetov.com/apple-touch-icon.png">
+<link rel="mask-icon" href="https://albertakhmetov.com/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<link rel="alternate" hreflang="en" href="https://albertakhmetov.com/posts/2025/switching-between-dark-and-light-themes-in-a-winui-app/">
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --code-block-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-track {
+                background: 0 0;
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-thumb {
+                border-color: var(--theme);
+            }
+        }
+
+    </style>
+</noscript><meta property="og:title" content="Switching Between Dark and Light Themes in a WinUI App" />
+<meta property="og:description" content="In this note, we will look at how to switch between light and dark themes in a WinUI app." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://albertakhmetov.com/posts/2025/switching-between-dark-and-light-themes-in-a-winui-app/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2025-02-16T12:00:00+05:00" />
+<meta property="article:modified_time" content="2025-02-16T12:00:00+05:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Switching Between Dark and Light Themes in a WinUI App"/>
+<meta name="twitter:description" content="In this note, we will look at how to switch between light and dark themes in a WinUI app."/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Posts",
+      "item": "https://albertakhmetov.com/posts/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "Switching Between Dark and Light Themes in a WinUI App",
+      "item": "https://albertakhmetov.com/posts/2025/switching-between-dark-and-light-themes-in-a-winui-app/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Switching Between Dark and Light Themes in a WinUI App",
+  "name": "Switching Between Dark and Light Themes in a WinUI App",
+  "description": "In this note, we will look at how to switch between light and dark themes in a WinUI app.\n",
+  "keywords": [
+    "How to implement dark and light theme toggle in WinUI app", "Step-by-step guide to switch themes in WinUI application", "WinUI dark mode and light mode setup tutorial"
+  ],
+  "articleBody": "In this note, we will look at how to switch between light and dark themes in a WinUI app.\nIn theory, there is a property called RequestedTheme that should handle switching between themes. However, it seems something isn’t working as expected. This property only changes the theme of the window’s content, but it doesn’t affect the title bar (window header).\nTo solve this problem, you can use the DwmSetWindowAttribute function. As I mentioned earlier, the easiest way to use it is with the CsWin32 library. This library helps simplify working with Windows APIs in C#. Here’s how you can do it:\nAdd CsWin32 to your project:\nInstall the CsWin32 NuGet package to generate P/Invoke methods for Windows APIs.\nGenerate the necessary bindings:\nCreate a NativeMethods.txt file in your project and add DwmSetWindowAttribute to it. This tells CsWin32 to generate the required method.\nUse DwmSetWindowAttribute to set the title bar theme:\nCall the function to apply the dark or light theme to the window title bar.\nHere’s an example of how you might implement this:\nprivate unsafe void UpdateTheme(bool isDarkTheme) { var hwnd = new HWND(WinRT.Interop.WindowNative.GetWindowHandle(this)); var isDark = isDarkTheme ? 1 : 0; // Set the theme for the title bar var result = PInvoke.DwmSetWindowAttribute( hwnd: hwnd, dwAttribute: DWMWINDOWATTRIBUTE.DWMWA_USE_IMMERSIVE_DARK_MODE, pvAttribute: Unsafe.AsPointer(ref isDark), cbAttribute: sizeof(int)); if (result != 0) { throw Marshal.GetExceptionForHR(result) ?? throw new ApplicationException(\"Can't switch dark mode setting\"); } // Set the theme for the content if (Content is FrameworkElement element) { element.RequestedTheme = isDarkTheme ? ElementTheme.Dark : ElementTheme.Light; } } In this way, you can set the theme manually. But what if we want the app to use system settings?\nFirst, it’s worth noting that the system has two theme settings: one for the system (taskbar, start menu) and one for apps. In general, users change the theme for everything. However, they also have the option to mix and match — for example, making the taskbar dark while keeping apps light. Judging by the visual bugs in the current version of Windows, even the system developers seem to have forgotten about this.\nI couldn’t find officially documented APIs for determining the theme (maybe I didn’t search well enough). However, I managed to find out that there are two functions in uxtheme.dll that return the system and app themes. Here’s how you can declare them:\n[DllImport(\"UxTheme.dll\", EntryPoint = \"#132\", SetLastError = true)] static extern bool ShouldAppsUseDarkMode(); [DllImport(\"UxTheme.dll\", EntryPoint = \"#138\", SetLastError = true)] static extern bool ShouldSystemUseDarkMode(); The system theme is useful when you need to interact with the taskbar. For example, to add a non-standard context menu for a tray icon or when writing an app like my flowOSD.\nThere are many ways to track changes in the system and app themes. For my own use, I chose the following solution: handle the WM_WININICHANGE message and request data using the functions mentioned above.\nFor this, I wrote a small class that uses IObservable to broadcast the current system and app themes:\nusing System.Reactive.Linq; using System.Reactive.Subjects; using System.Runtime.InteropServices; using Windows.Win32; using Windows.Win32.Foundation; using Windows.Win32.UI.WindowsAndMessaging; public class SystemEventsService : IDisposable { private const uint WM_WININICHANGE = 0x001A; private NativeWindow window; private readonly BehaviorSubject\u003cbool\u003e appDarkThemeSubject, systemDarkThemeSubject; public SystemEventsService() { window = new NativeWindow(this); appDarkThemeSubject = new BehaviorSubject\u003cbool\u003e(ShouldAppsUseDarkMode()); systemDarkThemeSubject = new BehaviorSubject\u003cbool\u003e(ShouldSystemUseDarkMode()); AppDarkTheme = appDarkThemeSubject.AsObservable(); SystemDarkTheme = systemDarkThemeSubject.AsObservable(); } public IObservable\u003cbool\u003e AppDarkTheme { get; } public IObservable\u003cbool\u003e SystemDarkTheme { get; } public void Dispose() { window.Dispose(); } private void ProcessMessage(uint msg, WPARAM wParam, LPARAM lParam) { if (msg == WM_WININICHANGE \u0026\u0026 Marshal.PtrToStringAuto(lParam) == \"ImmersiveColorSet\") { appDarkThemeSubject.OnNext(ShouldAppsUseDarkMode()); systemDarkThemeSubject.OnNext(ShouldSystemUseDarkMode()); return; } } [DllImport(\"UxTheme.dll\", EntryPoint = \"#132\", SetLastError = true)] static extern bool ShouldAppsUseDarkMode(); [DllImport(\"UxTheme.dll\", EntryPoint = \"#138\", SetLastError = true)] static extern bool ShouldSystemUseDarkMode(); private sealed class NativeWindow : IDisposable { private readonly string windowId; private SystemEventsService owner; private WNDPROC proc; public unsafe NativeWindow(SystemEventsService owner) { this.owner = owner ?? throw new ArgumentNullException(nameof(owner)); windowId = $\"class:com.albertakhmetov.themesample\"; proc = OnWindowMessageReceived; fixed (char* className = windowId) { var classInfo = new WNDCLASSW() { lpfnWndProc = proc, lpszClassName = new PCWSTR(className), }; PInvoke.RegisterClass(classInfo); Hwnd = PInvoke.CreateWindowEx( dwExStyle: 0, lpClassName: windowId, lpWindowName: windowId, dwStyle: 0, X: 0, Y: 0, nWidth: 0, nHeight: 0, hWndParent: new HWND(IntPtr.Zero), hMenu: null, hInstance: null, lpParam: null); } } ~NativeWindow() { Dispose(false); } public HWND Hwnd { get; private set; } public void Dispose() { Dispose(true); GC.SuppressFinalize(this); } private void Dispose(bool isDisposing) { if (Hwnd != HWND.Null) { PInvoke.DestroyWindow(hWnd: Hwnd); Hwnd = HWND.Null; PInvoke.UnregisterClass( lpClassName: windowId, hInstance: null); } } private LRESULT OnWindowMessageReceived(HWND hwnd, uint msg, WPARAM wParam, LPARAM lParam) { owner.ProcessMessage(msg, wParam, lParam); return PInvoke.DefWindowProc( hWnd: hwnd, Msg: msg, wParam: wParam, lParam: lParam); } } } The main principle of operation: create an invisible window and process window messages in it. If something relevant is found, request additional data and broadcast it via IObservable. The theme is controlled by the window message WM_WININICHANGE if its lParam is equal to “ImmersiveColorSet”:\nmsg == WM_WININICHANGE \u0026\u0026 Marshal.PtrToStringAuto(lParam) == \"ImmersiveColorSet\" For successful compilation, you need to add the System.Reactive NuGet package to the project and include the following functions in NativeMethods.txt:\nRegisterClass\rUnregisterClass\rCreateWindowEx\rDestroyWindow\rDefWindowProc Let’s look at an example of using this class. Define themeSubject as a BehaviorSubject that stores the preferred app theme: dark, light, or system-defined.\nThe following expression combines the sequences of app settings and system events. If the theme is set to “system-defined,” it will be taken from the SystemEventsService class. Otherwise, the user’s custom setting will be used. The theme will change when the user updates the setting in the app (themeSubject) or in the system settings. This solution uses the app theme setting; to use the system theme, replace AppDarkTheme with SystemDarkTheme.\nthemeSubject .CombineLatest(systemEventsService.AppDarkTheme.Select(x =\u003e x)) .ObserveOn(SynchronizationContext.Current!) .Subscribe(x =\u003e UpdateTheme(x.First == Theme.System ? x.Second : (x.First == Theme.Dark))); The source code available here.\n",
+  "wordCount" : "956",
+  "inLanguage": "en",
+  "datePublished": "2025-02-16T12:00:00+05:00",
+  "dateModified": "2025-02-16T12:00:00+05:00",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://albertakhmetov.com/posts/2025/switching-between-dark-and-light-themes-in-a-winui-app/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Albert Akhmetov",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://albertakhmetov.com/favicon.ico"
+    }
+  }
+}
+</script>
+</head>
+
+<body class="" id="top">
+<script>
+    if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark');
+    }
+
+</script>
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="https://albertakhmetov.com/" accesskey="h" title="Albert Akhmetov (Alt + H)">Albert Akhmetov</a>
+            <div class="logo-switches">
+            </div>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="https://albertakhmetov.com/posts/introduce" title="about me">
+                    <span>about me</span>
+                </a>
+            </li>
+            <li>
+                <a href="https://albertakhmetov.com/tags" title="tags">
+                    <span>tags</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    
+    <h1 class="post-title entry-hint-parent">
+      Switching Between Dark and Light Themes in a WinUI App
+    </h1>
+    <div class="post-meta"><span title='2025-02-16 12:00:00 +0500 +05'>February 16, 2025</span>
+
+</div>
+  </header> 
+  <div class="post-content"><p>In this note, we will look at how to switch between light and dark themes in a WinUI app.</p>
+<p>In theory, there is a property called <code>RequestedTheme</code> that should handle switching between themes. However, it seems something isn’t working as expected. This property only changes the theme of the window’s content, but it doesn’t affect the title bar (window header).</p>
+<p>To solve this problem, you can use the <code>DwmSetWindowAttribute</code> function. As I mentioned earlier, the easiest way to use it is with the <strong>CsWin32</strong> library. This library helps simplify working with Windows APIs in C#. Here’s how you can do it:</p>
+<ul>
+<li>
+<p>Add CsWin32 to your project:</p>
+<p>Install the <a href="https://www.nuget.org/packages/Microsoft.Windows.CsWin32"><strong>CsWin32</strong> NuGet package</a> to generate P/Invoke methods for Windows APIs.</p>
+</li>
+<li>
+<p>Generate the necessary bindings:</p>
+<p>Create a NativeMethods.txt file in your project and add <code>DwmSetWindowAttribute</code> to it. This tells <code>CsWin32</code> to generate the required method.</p>
+</li>
+<li>
+<p>Use <code>DwmSetWindowAttribute</code> to set the title bar theme:</p>
+<p>Call the function to apply the dark or light theme to the window title bar.</p>
+</li>
+</ul>
+<p>Here’s an example of how you might implement this:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c#" data-lang="c#"><span style="display:flex;"><span><span style="color:#66d9ef">private</span> <span style="color:#66d9ef">unsafe</span> <span style="color:#66d9ef">void</span> UpdateTheme(<span style="color:#66d9ef">bool</span> isDarkTheme)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">var</span> hwnd = <span style="color:#66d9ef">new</span> HWND(WinRT.Interop.WindowNative.GetWindowHandle(<span style="color:#66d9ef">this</span>));
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">var</span> isDark = isDarkTheme ? <span style="color:#ae81ff">1</span> : <span style="color:#ae81ff">0</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Set the theme for the title bar</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">var</span> result = PInvoke.DwmSetWindowAttribute(
+</span></span><span style="display:flex;"><span>        hwnd: hwnd,
+</span></span><span style="display:flex;"><span>        dwAttribute: DWMWINDOWATTRIBUTE.DWMWA_USE_IMMERSIVE_DARK_MODE,
+</span></span><span style="display:flex;"><span>        pvAttribute: Unsafe.AsPointer(<span style="color:#66d9ef">ref</span> isDark),
+</span></span><span style="display:flex;"><span>        cbAttribute: <span style="color:#66d9ef">sizeof</span>(<span style="color:#66d9ef">int</span>));
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> (result != <span style="color:#ae81ff">0</span>)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">throw</span> Marshal.GetExceptionForHR(result) ?? <span style="color:#66d9ef">throw</span> <span style="color:#66d9ef">new</span> ApplicationException(<span style="color:#e6db74">&#34;Can&#39;t switch dark mode setting&#34;</span>);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Set the theme for the content</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> (Content <span style="color:#66d9ef">is</span> FrameworkElement element)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        element.RequestedTheme = isDarkTheme ? ElementTheme.Dark : ElementTheme.Light;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>In this way, you can set the theme manually. But what if we want the app to use system settings?</p>
+<p>First, it’s worth noting that the system has two theme settings: one for the system (taskbar, start menu) and one for apps. In general, users change the theme for everything. However, they also have the option to mix and match — for example, making the taskbar dark while keeping apps light. Judging by the visual bugs in the current version of Windows, even the system developers seem to have forgotten about this.</p>
+<p>I couldn’t find officially documented APIs for determining the theme (maybe I didn’t search well enough). However, I managed to find out that there are two functions in <code>uxtheme.dll</code> that return the system and app themes. Here’s how you can declare them:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c#" data-lang="c#"><span style="display:flex;"><span><span style="color:#a6e22e">[DllImport(&#34;UxTheme.dll&#34;, EntryPoint = &#34;#132&#34;, SetLastError = true)]</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">static</span> <span style="color:#66d9ef">extern</span> <span style="color:#66d9ef">bool</span> ShouldAppsUseDarkMode();
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">
+</span></span></span><span style="display:flex;"><span><span style="color:#a6e22e">[DllImport(&#34;UxTheme.dll&#34;, EntryPoint = &#34;#138&#34;, SetLastError = true)]</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">static</span> <span style="color:#66d9ef">extern</span> <span style="color:#66d9ef">bool</span> ShouldSystemUseDarkMode();
+</span></span></code></pre></div><p>The system theme is useful when you need to interact with the taskbar. For example, to add a non-standard context menu for a tray icon or when writing an app like my <a href="https://github.com/albertakhmetov/flowOSD">flowOSD</a>.</p>
+<p>There are many ways to track changes in the system and app themes. For my own use, I chose the following solution: handle the <code>WM_WININICHANGE</code> message and request data using the functions mentioned above.</p>
+<p>For this, I wrote a small class that uses <code>IObservable</code> to broadcast the current system and app themes:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c#" data-lang="c#"><span style="display:flex;"><span><span style="color:#66d9ef">using</span> System.Reactive.Linq;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">using</span> System.Reactive.Subjects;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">using</span> System.Runtime.InteropServices;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">using</span> Windows.Win32;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">using</span> Windows.Win32.Foundation;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">using</span> Windows.Win32.UI.WindowsAndMessaging;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">SystemEventsService</span> : IDisposable
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">const</span> <span style="color:#66d9ef">uint</span> WM_WININICHANGE = <span style="color:#ae81ff">0x001A</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">private</span> NativeWindow window;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">readonly</span> BehaviorSubject&lt;<span style="color:#66d9ef">bool</span>&gt; appDarkThemeSubject, systemDarkThemeSubject;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> SystemEventsService()
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        window = <span style="color:#66d9ef">new</span> NativeWindow(<span style="color:#66d9ef">this</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        appDarkThemeSubject = <span style="color:#66d9ef">new</span> BehaviorSubject&lt;<span style="color:#66d9ef">bool</span>&gt;(ShouldAppsUseDarkMode());
+</span></span><span style="display:flex;"><span>        systemDarkThemeSubject = <span style="color:#66d9ef">new</span> BehaviorSubject&lt;<span style="color:#66d9ef">bool</span>&gt;(ShouldSystemUseDarkMode());
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        AppDarkTheme = appDarkThemeSubject.AsObservable();
+</span></span><span style="display:flex;"><span>        SystemDarkTheme = systemDarkThemeSubject.AsObservable();
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> IObservable&lt;<span style="color:#66d9ef">bool</span>&gt; AppDarkTheme { <span style="color:#66d9ef">get</span>; }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> IObservable&lt;<span style="color:#66d9ef">bool</span>&gt; SystemDarkTheme { <span style="color:#66d9ef">get</span>; }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">void</span> Dispose()
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        window.Dispose();
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">void</span> ProcessMessage(<span style="color:#66d9ef">uint</span> msg, WPARAM wParam, LPARAM lParam)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> (msg == WM_WININICHANGE &amp;&amp; Marshal.PtrToStringAuto(lParam) == <span style="color:#e6db74">&#34;ImmersiveColorSet&#34;</span>)
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            appDarkThemeSubject.OnNext(ShouldAppsUseDarkMode());
+</span></span><span style="display:flex;"><span>            systemDarkThemeSubject.OnNext(ShouldSystemUseDarkMode());
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">return</span>;
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">
+</span></span></span><span style="display:flex;"><span><span style="color:#a6e22e">    [DllImport(&#34;UxTheme.dll&#34;, EntryPoint = &#34;#132&#34;, SetLastError = true)]</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">extern</span> <span style="color:#66d9ef">bool</span> ShouldAppsUseDarkMode();
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">
+</span></span></span><span style="display:flex;"><span><span style="color:#a6e22e">    [DllImport(&#34;UxTheme.dll&#34;, EntryPoint = &#34;#138&#34;, SetLastError = true)]</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">extern</span> <span style="color:#66d9ef">bool</span> ShouldSystemUseDarkMode();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">sealed</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">NativeWindow</span> : IDisposable
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">readonly</span> <span style="color:#66d9ef">string</span> windowId;
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">private</span> SystemEventsService owner;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">private</span> WNDPROC proc;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">unsafe</span> NativeWindow(SystemEventsService owner)
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">this</span>.owner = owner ?? <span style="color:#66d9ef">throw</span> <span style="color:#66d9ef">new</span> ArgumentNullException(nameof(owner));
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            windowId = <span style="color:#e6db74">$&#34;class:com.albertakhmetov.themesample&#34;</span>;
+</span></span><span style="display:flex;"><span>            proc = OnWindowMessageReceived;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">fixed</span> (<span style="color:#66d9ef">char</span>* className = windowId)
+</span></span><span style="display:flex;"><span>            {
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">var</span> classInfo = <span style="color:#66d9ef">new</span> WNDCLASSW()
+</span></span><span style="display:flex;"><span>                {
+</span></span><span style="display:flex;"><span>                    lpfnWndProc = proc,
+</span></span><span style="display:flex;"><span>                    lpszClassName = <span style="color:#66d9ef">new</span> PCWSTR(className),
+</span></span><span style="display:flex;"><span>                };
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>                PInvoke.RegisterClass(classInfo);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>                Hwnd = PInvoke.CreateWindowEx(
+</span></span><span style="display:flex;"><span>                    dwExStyle: <span style="color:#ae81ff">0</span>,
+</span></span><span style="display:flex;"><span>                    lpClassName: windowId,
+</span></span><span style="display:flex;"><span>                    lpWindowName: windowId,
+</span></span><span style="display:flex;"><span>                    dwStyle: <span style="color:#ae81ff">0</span>,
+</span></span><span style="display:flex;"><span>                    X: <span style="color:#ae81ff">0</span>,
+</span></span><span style="display:flex;"><span>                    Y: <span style="color:#ae81ff">0</span>,
+</span></span><span style="display:flex;"><span>                    nWidth: <span style="color:#ae81ff">0</span>,
+</span></span><span style="display:flex;"><span>                    nHeight: <span style="color:#ae81ff">0</span>,
+</span></span><span style="display:flex;"><span>                    hWndParent: <span style="color:#66d9ef">new</span> HWND(IntPtr.Zero),
+</span></span><span style="display:flex;"><span>                    hMenu: <span style="color:#66d9ef">null</span>,
+</span></span><span style="display:flex;"><span>                    hInstance: <span style="color:#66d9ef">null</span>,
+</span></span><span style="display:flex;"><span>                    lpParam: <span style="color:#66d9ef">null</span>);
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        ~NativeWindow()
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            Dispose(<span style="color:#66d9ef">false</span>);
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">public</span> HWND Hwnd { <span style="color:#66d9ef">get</span>; <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">set</span>; }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">void</span> Dispose()
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            Dispose(<span style="color:#66d9ef">true</span>);
+</span></span><span style="display:flex;"><span>            GC.SuppressFinalize(<span style="color:#66d9ef">this</span>);
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">void</span> Dispose(<span style="color:#66d9ef">bool</span> isDisposing)
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">if</span> (Hwnd != HWND.Null)
+</span></span><span style="display:flex;"><span>            {
+</span></span><span style="display:flex;"><span>                PInvoke.DestroyWindow(hWnd: Hwnd);
+</span></span><span style="display:flex;"><span>                Hwnd = HWND.Null;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>                PInvoke.UnregisterClass(
+</span></span><span style="display:flex;"><span>                    lpClassName: windowId,
+</span></span><span style="display:flex;"><span>                    hInstance: <span style="color:#66d9ef">null</span>);
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">private</span> LRESULT OnWindowMessageReceived(HWND hwnd, <span style="color:#66d9ef">uint</span> msg, WPARAM wParam, LPARAM lParam)
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            owner.ProcessMessage(msg, wParam, lParam);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">return</span> PInvoke.DefWindowProc(
+</span></span><span style="display:flex;"><span>                hWnd: hwnd,
+</span></span><span style="display:flex;"><span>                Msg: msg,
+</span></span><span style="display:flex;"><span>                wParam: wParam,
+</span></span><span style="display:flex;"><span>                lParam: lParam);
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>The main principle of operation: create an invisible window and process window messages in it. If something relevant is found, request additional data and broadcast it via <code>IObservable</code>. The theme is controlled by the window message <code>WM_WININICHANGE</code> if its <code>lParam</code> is equal to &ldquo;ImmersiveColorSet&rdquo;:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c#" data-lang="c#"><span style="display:flex;"><span>msg == WM_WININICHANGE &amp;&amp; Marshal.PtrToStringAuto(lParam) == <span style="color:#e6db74">&#34;ImmersiveColorSet&#34;</span>
+</span></span></code></pre></div><p>For successful compilation, you need to add the <a href="https://www.nuget.org/packages/System.Reactive"><strong>System.Reactive</strong> NuGet package</a> to the project and include the following functions in NativeMethods.txt:</p>
+<pre tabindex="0"><code>RegisterClass
+UnregisterClass
+CreateWindowEx
+DestroyWindow
+DefWindowProc
+</code></pre><p>Let’s look at an example of using this class. Define <code>themeSubject</code> as a <code>BehaviorSubject</code> that stores the preferred app theme: dark, light, or system-defined.</p>
+<p>The following expression combines the sequences of app settings and system events. If the theme is set to &ldquo;system-defined,&rdquo; it will be taken from the <code>SystemEventsService</code> class. Otherwise, the user&rsquo;s custom setting will be used. The theme will change when the user updates the setting in the app (<code>themeSubject</code>) or in the system settings. This solution uses the app theme setting; to use the system theme, replace <code>AppDarkTheme</code> with <code>SystemDarkTheme</code>.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c#" data-lang="c#"><span style="display:flex;"><span>themeSubject
+</span></span><span style="display:flex;"><span>    .CombineLatest(systemEventsService.AppDarkTheme.Select(x =&gt; x))
+</span></span><span style="display:flex;"><span>    .ObserveOn(SynchronizationContext.Current!)
+</span></span><span style="display:flex;"><span>    .Subscribe(x =&gt; UpdateTheme(x.First == Theme.System ? x.Second : (x.First == Theme.Dark)));
+</span></span></code></pre></div><p>The source code available <a href="https://github.com/albertakhmetov/albertakhmetov.com/tree/main/Themes">here</a>.</p>
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+      <li><a href="https://albertakhmetov.com/tags/c%23/">C#</a></li>
+      <li><a href="https://albertakhmetov.com/tags/.net/">.NET</a></li>
+      <li><a href="https://albertakhmetov.com/tags/winui/">WinUI</a></li>
+      <li><a href="https://albertakhmetov.com/tags/winapi/">WinAPI</a></li>
+    </ul>
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+        <span>&copy; 2025 <a href="https://albertakhmetov.com/">Albert Akhmetov</a></span> · 
+
+    <span>
+        Powered by
+        <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
+        <a href="https://github.com/adityatelange/hugo-PaperMod/" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu')
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = 'copy';
+
+        function copyingDone() {
+            copybutton.innerHTML = 'copied!';
+            setTimeout(() => {
+                copybutton.innerHTML = 'copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+
+        if (container.classList.contains("highlight")) {
+            container.appendChild(copybutton);
+        } else if (container.parentNode.firstChild == container) {
+            
+        } else if (codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName == "TABLE") {
+            
+            codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.appendChild(copybutton);
+        } else {
+            
+            codeblock.parentNode.appendChild(copybutton);
+        }
+    });
+</script>
+</body>
+
+</html>

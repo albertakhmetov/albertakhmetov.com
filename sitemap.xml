@@ -3,13 +3,28 @@
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
     <loc>https://albertakhmetov.com/tags/.net/</loc>
-    <lastmod>2025-02-09T12:00:00+05:00</lastmod>
+    <lastmod>2025-02-16T12:00:00+05:00</lastmod>
   </url><url>
     <loc>https://albertakhmetov.com/</loc>
-    <lastmod>2025-02-09T12:00:00+05:00</lastmod>
+    <lastmod>2025-02-16T12:00:00+05:00</lastmod>
   </url><url>
     <loc>https://albertakhmetov.com/tags/c%23/</loc>
-    <lastmod>2025-02-09T12:00:00+05:00</lastmod>
+    <lastmod>2025-02-16T12:00:00+05:00</lastmod>
+  </url><url>
+    <loc>https://albertakhmetov.com/posts/</loc>
+    <lastmod>2025-02-16T12:00:00+05:00</lastmod>
+  </url><url>
+    <loc>https://albertakhmetov.com/posts/2025/switching-between-dark-and-light-themes-in-a-winui-app/</loc>
+    <lastmod>2025-02-16T12:00:00+05:00</lastmod>
+  </url><url>
+    <loc>https://albertakhmetov.com/tags/</loc>
+    <lastmod>2025-02-16T12:00:00+05:00</lastmod>
+  </url><url>
+    <loc>https://albertakhmetov.com/tags/winapi/</loc>
+    <lastmod>2025-02-16T12:00:00+05:00</lastmod>
+  </url><url>
+    <loc>https://albertakhmetov.com/tags/winui/</loc>
+    <lastmod>2025-02-16T12:00:00+05:00</lastmod>
   </url><url>
     <loc>https://albertakhmetov.com/tags/di/</loc>
     <lastmod>2025-02-09T12:00:00+05:00</lastmod>
@@ -18,15 +33,6 @@
     <lastmod>2025-02-09T12:00:00+05:00</lastmod>
   </url><url>
     <loc>https://albertakhmetov.com/tags/ioc/</loc>
-    <lastmod>2025-02-09T12:00:00+05:00</lastmod>
-  </url><url>
-    <loc>https://albertakhmetov.com/posts/</loc>
-    <lastmod>2025-02-09T12:00:00+05:00</lastmod>
-  </url><url>
-    <loc>https://albertakhmetov.com/tags/</loc>
-    <lastmod>2025-02-09T12:00:00+05:00</lastmod>
-  </url><url>
-    <loc>https://albertakhmetov.com/tags/winui/</loc>
     <lastmod>2025-02-09T12:00:00+05:00</lastmod>
   </url><url>
     <loc>https://albertakhmetov.com/posts/2025/contentdialog-and-mvvm-in-winui/</loc>
@@ -60,9 +66,6 @@
     <lastmod>2025-01-05T12:00:00+05:00</lastmod>
   </url><url>
     <loc>https://albertakhmetov.com/posts/2024/how-to-extract-a-specific-image-from-an-icon-file/</loc>
-    <lastmod>2024-12-29T12:00:00+05:00</lastmod>
-  </url><url>
-    <loc>https://albertakhmetov.com/tags/winapi/</loc>
     <lastmod>2024-12-29T12:00:00+05:00</lastmod>
   </url><url>
     <loc>https://albertakhmetov.com/tags/benchmarkdotnet/</loc>
