@@ -6,8 +6,15 @@
     <description>Recent content in Posts on Albert Akhmetov</description>
     <generator>Hugo -- 0.136.5</generator>
     <language>en-us</language>
-    <lastBuildDate>Sun, 16 Feb 2025 12:00:00 +0500</lastBuildDate>
+    <lastBuildDate>Sun, 23 Feb 2025 12:00:00 +0500</lastBuildDate>
     <atom:link href="https://albertakhmetov.com/posts/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>How to Set a Minimum Window Size in WinUI</title>
+      <link>https://albertakhmetov.com/posts/2025/how-to-set-a-minimum-window-size-in-winui/</link>
+      <pubDate>Sun, 23 Feb 2025 12:00:00 +0500</pubDate>
+      <guid>https://albertakhmetov.com/posts/2025/how-to-set-a-minimum-window-size-in-winui/</guid>
+      <description>&lt;p&gt;WinUI doesn’t support window size limits by default, but you can easily add this feature yourself.&lt;/p&gt;</description>
+    </item>
     <item>
       <title>Switching Between Dark and Light Themes in a WinUI App</title>
       <link>https://albertakhmetov.com/posts/2025/switching-between-dark-and-light-themes-in-a-winui-app/</link>

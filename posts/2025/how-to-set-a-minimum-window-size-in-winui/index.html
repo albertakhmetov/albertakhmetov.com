@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>How to Set a Minimum Window Size in WinUI | Albert Akhmetov</title>
+<meta name="keywords" content="How to set minimum window size in WinUI, WinUI minimum window size limit tutorial, Restrict window size in WinUI C#">
+<meta name="description" content="WinUI doesn’t support window size limits by default, but you can easily add this feature yourself.">
+<meta name="author" content="">
+<link rel="canonical" href="https://albertakhmetov.com/posts/2025/how-to-set-a-minimum-window-size-in-winui/">
+<link crossorigin="anonymous" href="/assets/css/stylesheet.css" rel="preload stylesheet" as="style">
+<link rel="icon" href="https://albertakhmetov.com/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="https://albertakhmetov.com/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://albertakhmetov.com/favicon-32x32.png">
+<link rel="apple-touch-icon" href="https://albertakhmetov.com/apple-touch-icon.png">
+<link rel="mask-icon" href="https://albertakhmetov.com/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<link rel="alternate" hreflang="en" href="https://albertakhmetov.com/posts/2025/how-to-set-a-minimum-window-size-in-winui/">
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --code-block-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-track {
+                background: 0 0;
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-thumb {
+                border-color: var(--theme);
+            }
+        }
+
+    </style>
+</noscript><meta property="og:title" content="How to Set a Minimum Window Size in WinUI" />
+<meta property="og:description" content="WinUI doesn’t support window size limits by default, but you can easily add this feature yourself." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://albertakhmetov.com/posts/2025/how-to-set-a-minimum-window-size-in-winui/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2025-02-23T12:00:00+05:00" />
+<meta property="article:modified_time" content="2025-02-23T12:00:00+05:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="How to Set a Minimum Window Size in WinUI"/>
+<meta name="twitter:description" content="WinUI doesn’t support window size limits by default, but you can easily add this feature yourself."/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Posts",
+      "item": "https://albertakhmetov.com/posts/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "How to Set a Minimum Window Size in WinUI",
+      "item": "https://albertakhmetov.com/posts/2025/how-to-set-a-minimum-window-size-in-winui/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "How to Set a Minimum Window Size in WinUI",
+  "name": "How to Set a Minimum Window Size in WinUI",
+  "description": "WinUI doesn’t support window size limits by default, but you can easily add this feature yourself.\n",
+  "keywords": [
+    "How to set minimum window size in WinUI", "WinUI minimum window size limit tutorial", "Restrict window size in WinUI C#"
+  ],
+  "articleBody": "WinUI doesn’t support window size limits by default, but you can easily add this feature yourself.\nWinUI functionality can often be extended using the Win32 API, and this is exactly one of those cases. While WinUI provides a modern and streamlined way to build Windows apps, some advanced features — like setting window size limits — aren’t natively supported. That’s where the Win32 API comes in handy. By leveraging its powerful capabilities, you can fill in the gaps and create more polished user experience.\nTo restrict the window size, we need to override the window procedure and intercept the WM_GETMINMAXINFO window message. For this, we’ll use functions from the Win32 API, which are most conveniently accessed via CsWin32.\nThe file NativeMethods.txt will look like this:\nGetDpiForWindow\rSetWindowLongPtr\rCallWindowProc\rWM_GETMINMAXINFO\rMINMAXINFO To override the window procedure, you can use the following code:\nprivate readonly WNDPROC nativeWindowProc; public MainWindow() { // Replace the window procedure with our custom one var p = PInvoke.SetWindowLongPtr( hWnd: new HWND(WinRT.Interop.WindowNative.GetWindowHandle(this)), nIndex: WINDOW_LONG_PTR_INDEX.GWL_WNDPROC, dwNewLong: Marshal.GetFunctionPointerForDelegate(WindowProc)); // Store the original window procedure to call it later nativeWindowProc = Marshal.GetDelegateForFunctionPointer(p); } private LRESULT WindowProc(HWND hWnd, uint msg, WPARAM wParam, LPARAM lParam) { // Call the original window procedure for default handling return PInvoke.CallWindowProc(nativeWindowProc, hWnd, msg, wParam, lParam); } But this code won’t work. The issue lies in how the WNDPROC delegate is handled. When you pass a delegate to SetWindowLongPtr, it’s essentially a function pointer that the system will call later. However, if you don’t store this delegate in a field, the .NET garbage collector might clean it up, thinking it’s no longer needed. Once the delegate is collected, the function pointer becomes invalid, and any attempt to call it will crash your application.\nIn other words, the delegate “disappears” because it’s not referenced anywhere in your code, and the garbage collector removes it. When the system tries to call the window procedure later, it points to an invalid memory location, causing your app to fail.\nHere’s the corrected version of the code:\nprivate readonly WNDPROC windowProc; // Store the delegate to prevent the garbage collection private readonly WNDPROC nativeWindowProc; public MainWindow() { // Initialize the delegate and store it in a field windowProc = new WNDPROC(WindowProc); // Replace the window procedure with our custom one var p = PInvoke.SetWindowLongPtr( hWnd: new HWND(WinRT.Interop.WindowNative.GetWindowHandle(this)), nIndex: WINDOW_LONG_PTR_INDEX.GWL_WNDPROC, dwNewLong: Marshal.GetFunctionPointerForDelegate(windowProc)); // Store the original window procedure to call it later nativeWindowProc = Marshal.GetDelegateForFunctionPointer(p); } private LRESULT WindowProc(HWND hWnd, uint msg, WPARAM wParam, LPARAM lParam) { // Call the original window procedure for default handling return PInvoke.CallWindowProc(nativeWindowProc, hWnd, msg, wParam, lParam); } Now we’re ready to restrict the window size. For this, we’ll use four readonly properties:\nprivate int? MinWidth { get; } private int? MinHeight { get; } private int? MaxWidth { get; } private int? MaxHeight { get; } These properties define the minimum and maximum dimensions of the window in absolute values (assuming a DPI scale factor of 1).\nWhy is this important? Modern displays often use DPI scaling to make text and UI elements appear sharper and more readable. However, this means that the actual pixel dimensions of the window can vary depending on the user’s display settings. By defining the size limits in absolute values (as if the DPI scale factor was 1), we ensure that the window behaves consistently across different devices.\nIn the systems with multiple monitors (e.g., a laptop with an external display), each monitor can have its own DPI scaling factor. For example, the laptop screen might use a scaling factor of 125%, while the external monitor uses 100%. To handle this, we’ll dynamically adjust the window size limits based on the DPI scaling of the monitor where the window is currently displayed. This ensures that the window’s size constraints are applied correctly, no matter which monitor the user moves it to.\nHere’s the final version of our window procedure:\nprivate unsafe LRESULT WindowProc(HWND hWnd, uint msg, WPARAM wParam, LPARAM lParam) { // Check if the message is WM_GETMINMAXINFO, which is used to set window size limits if (msg == PInvoke.WM_GETMINMAXINFO) { // Get the DPI of the monitor where the window is currently displayed var dpi = PInvoke.GetDpiForWindow(new HWND(WinRT.Interop.WindowNative.GetWindowHandle(this))); // Calculate the scaling factor based on the DPI (96 DPI = 100% scaling) var scalingFactor = dpi / 96f; // Cast the lParam to a MINMAXINFO pointer to modify the window size constraints MINMAXINFO* minMaxInfo = (MINMAXINFO*)lParam.Value; // Apply the minimum width, scaled to the current DPI if (MinWidth != null) { minMaxInfo-\u003eptMinTrackSize.X = (int)(MinWidth * scalingFactor); } // Apply the minimum height, scaled to the current DPI if (MinHeight != null) { minMaxInfo-\u003eptMinTrackSize.Y = (int)(MinHeight * scalingFactor); } // Apply the maximum width, scaled to the current DPI if (MaxWidth != null) { minMaxInfo-\u003eptMaxTrackSize.X = (int)(MaxWidth * scalingFactor); } // Apply the maximum height, scaled to the current DPI if (MaxHeight != null) { minMaxInfo-\u003eptMaxTrackSize.Y = (int)(MaxHeight * scalingFactor); } } // Call the original window procedure to handle all other messages return PInvoke.CallWindowProc(nativeWindowProc, hWnd, msg, wParam, lParam); } Using a pointer (unsafe code) instead of StructToPtr is more efficient and straightforward for this scenario. Since the MINMAXINFO structure is already in unmanaged memory (passed via lParam), a pointer allows us to directly modify the data without copying it back and forth. This approach is faster and aligns better with Win32 API practices, where pointers are commonly used to interact with low-level structures. StructToPtr would add unnecessary overhead, making the code slower and more complex.\nIn conclusion, by leveraging the Win32 API and a bit of unsafe code, we’ve successfully added a crucial feature that WinUI lacks out of the box: the ability to restrict the window size. This approach not only enhances the user experience by ensuring your app’s window stays within defined bounds but also demonstrates how seamlessly WinUI can be extended with traditional Windows APIs. Whether you’re building a compact utility or a full-fledged desktop application, this technique empowers you to create more polished and professional apps. Happy coding!\n",
+  "wordCount" : "1000",
+  "inLanguage": "en",
+  "datePublished": "2025-02-23T12:00:00+05:00",
+  "dateModified": "2025-02-23T12:00:00+05:00",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://albertakhmetov.com/posts/2025/how-to-set-a-minimum-window-size-in-winui/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Albert Akhmetov",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://albertakhmetov.com/favicon.ico"
+    }
+  }
+}
+</script>
+</head>
+
+<body class="" id="top">
+<script>
+    if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark');
+    }
+
+</script>
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="https://albertakhmetov.com/" accesskey="h" title="Albert Akhmetov (Alt + H)">Albert Akhmetov</a>
+            <div class="logo-switches">
+            </div>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="https://albertakhmetov.com/posts/introduce" title="about me">
+                    <span>about me</span>
+                </a>
+            </li>
+            <li>
+                <a href="https://albertakhmetov.com/tags" title="tags">
+                    <span>tags</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    
+    <h1 class="post-title entry-hint-parent">
+      How to Set a Minimum Window Size in WinUI
+    </h1>
+    <div class="post-meta"><span title='2025-02-23 12:00:00 +0500 +05'>February 23, 2025</span>
+
+</div>
+  </header> 
+  <div class="post-content"><p>WinUI doesn’t support window size limits by default, but you can easily add this feature yourself.</p>
+<p>WinUI functionality can often be extended using the Win32 API, and this is exactly one of those cases. While WinUI provides a modern and streamlined way to build Windows apps, some advanced features — like setting window size limits — aren’t natively supported. That’s where the Win32 API comes in handy. By leveraging its powerful capabilities, you can fill in the gaps and create more polished user experience.</p>
+<p>To restrict the window size, we need to override the window procedure and intercept the <code>WM_GETMINMAXINFO</code> window message. For this, we’ll use functions from the Win32 API, which are most conveniently accessed via <a href="https://github.com/microsoft/CsWin32"><strong>CsWin32</strong></a>.</p>
+<p>The file <code>NativeMethods.txt</code> will look like this:</p>
+<pre tabindex="0"><code>GetDpiForWindow
+SetWindowLongPtr
+CallWindowProc
+WM_GETMINMAXINFO
+MINMAXINFO
+</code></pre><p>To override the window procedure, you can use the following code:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C#" data-lang="C#"><span style="display:flex;"><span><span style="color:#66d9ef">private</span> <span style="color:#66d9ef">readonly</span> WNDPROC nativeWindowProc;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">public</span> MainWindow()
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Replace the window procedure with our custom one</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">var</span> p = PInvoke.SetWindowLongPtr(
+</span></span><span style="display:flex;"><span>        hWnd: <span style="color:#66d9ef">new</span> HWND(WinRT.Interop.WindowNative.GetWindowHandle(<span style="color:#66d9ef">this</span>)),
+</span></span><span style="display:flex;"><span>        nIndex: WINDOW_LONG_PTR_INDEX.GWL_WNDPROC,
+</span></span><span style="display:flex;"><span>        dwNewLong: Marshal.GetFunctionPointerForDelegate&lt;WNDPROC&gt;(WindowProc));
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Store the original window procedure to call it later</span>
+</span></span><span style="display:flex;"><span>    nativeWindowProc = Marshal.GetDelegateForFunctionPointer&lt;WNDPROC&gt;(p);
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">private</span> LRESULT WindowProc(HWND hWnd, <span style="color:#66d9ef">uint</span> msg, WPARAM wParam, LPARAM lParam)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Call the original window procedure for default handling</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> PInvoke.CallWindowProc(nativeWindowProc, hWnd, msg, wParam, lParam);
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>But this code won’t work. The issue lies in how the <code>WNDPROC</code> delegate is handled. When you pass a delegate to <code>SetWindowLongPtr</code>, it’s essentially a function pointer that the system will call later. However, if you don’t store this delegate in a field, the .NET garbage collector might clean it up, thinking it’s no longer needed. Once the delegate is collected, the function pointer becomes invalid, and any attempt to call it will crash your application.</p>
+<p>In other words, the delegate &ldquo;disappears&rdquo; because it’s not referenced anywhere in your code, and the garbage collector removes it. When the system tries to call the window procedure later, it points to an invalid memory location, causing your app to fail.</p>
+<p>Here’s the corrected version of the code:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C#" data-lang="C#"><span style="display:flex;"><span><span style="color:#66d9ef">private</span> <span style="color:#66d9ef">readonly</span> WNDPROC windowProc; <span style="color:#75715e">// Store the delegate to prevent the garbage collection</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">private</span> <span style="color:#66d9ef">readonly</span> WNDPROC nativeWindowProc;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">public</span> MainWindow()
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Initialize the delegate and store it in a field</span>
+</span></span><span style="display:flex;"><span>    windowProc = <span style="color:#66d9ef">new</span> WNDPROC(WindowProc);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Replace the window procedure with our custom one</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">var</span> p = PInvoke.SetWindowLongPtr(
+</span></span><span style="display:flex;"><span>        hWnd: <span style="color:#66d9ef">new</span> HWND(WinRT.Interop.WindowNative.GetWindowHandle(<span style="color:#66d9ef">this</span>)),
+</span></span><span style="display:flex;"><span>        nIndex: WINDOW_LONG_PTR_INDEX.GWL_WNDPROC,
+</span></span><span style="display:flex;"><span>        dwNewLong: Marshal.GetFunctionPointerForDelegate&lt;WNDPROC&gt;(windowProc));
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Store the original window procedure to call it later</span>
+</span></span><span style="display:flex;"><span>    nativeWindowProc = Marshal.GetDelegateForFunctionPointer&lt;WNDPROC&gt;(p);
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">private</span> LRESULT WindowProc(HWND hWnd, <span style="color:#66d9ef">uint</span> msg, WPARAM wParam, LPARAM lParam)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Call the original window procedure for default handling</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> PInvoke.CallWindowProc(nativeWindowProc, hWnd, msg, wParam, lParam);
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>Now we’re ready to restrict the window size. For this, we’ll use four readonly properties:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C#" data-lang="C#"><span style="display:flex;"><span><span style="color:#66d9ef">private</span> <span style="color:#66d9ef">int?</span> MinWidth { <span style="color:#66d9ef">get</span>; }
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">private</span> <span style="color:#66d9ef">int?</span> MinHeight { <span style="color:#66d9ef">get</span>; }
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">private</span> <span style="color:#66d9ef">int?</span> MaxWidth { <span style="color:#66d9ef">get</span>; }
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">private</span> <span style="color:#66d9ef">int?</span> MaxHeight { <span style="color:#66d9ef">get</span>; }
+</span></span></code></pre></div><p>These properties define the minimum and maximum dimensions of the window in absolute values (assuming a DPI scale factor of 1).</p>
+<p>Why is this important? Modern displays often use DPI scaling to make text and UI elements appear sharper and more readable. However, this means that the actual pixel dimensions of the window can vary depending on the user’s display settings. By defining the size limits in absolute values (as if the DPI scale factor was 1), we ensure that the window behaves consistently across different devices.</p>
+<p>In the systems with multiple monitors (e.g., a laptop with an external display), each monitor can have its own DPI scaling factor. For example, the laptop screen might use a scaling factor of 125%, while the external monitor uses 100%. To handle this, we’ll dynamically adjust the window size limits based on the DPI scaling of the monitor where the window is currently displayed. This ensures that the window’s size constraints are applied correctly, no matter which monitor the user moves it to.</p>
+<p>Here’s the final version of our window procedure:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C#" data-lang="C#"><span style="display:flex;"><span><span style="color:#66d9ef">private</span> <span style="color:#66d9ef">unsafe</span> LRESULT WindowProc(HWND hWnd, <span style="color:#66d9ef">uint</span> msg, WPARAM wParam, LPARAM lParam)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Check if the message is WM_GETMINMAXINFO, which is used to set window size limits</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> (msg == PInvoke.WM_GETMINMAXINFO)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Get the DPI of the monitor where the window is currently displayed</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">var</span> dpi = PInvoke.GetDpiForWindow(<span style="color:#66d9ef">new</span> HWND(WinRT.Interop.WindowNative.GetWindowHandle(<span style="color:#66d9ef">this</span>)));
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Calculate the scaling factor based on the DPI (96 DPI = 100% scaling)</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">var</span> scalingFactor = dpi / <span style="color:#ae81ff">96f</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Cast the lParam to a MINMAXINFO pointer to modify the window size constraints</span>
+</span></span><span style="display:flex;"><span>        MINMAXINFO* minMaxInfo = (MINMAXINFO*)lParam.Value;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Apply the minimum width, scaled to the current DPI</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> (MinWidth != <span style="color:#66d9ef">null</span>)
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            minMaxInfo-&gt;ptMinTrackSize.X = (<span style="color:#66d9ef">int</span>)(MinWidth * scalingFactor);
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Apply the minimum height, scaled to the current DPI</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> (MinHeight != <span style="color:#66d9ef">null</span>)
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            minMaxInfo-&gt;ptMinTrackSize.Y = (<span style="color:#66d9ef">int</span>)(MinHeight * scalingFactor);
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Apply the maximum width, scaled to the current DPI</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> (MaxWidth != <span style="color:#66d9ef">null</span>)
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            minMaxInfo-&gt;ptMaxTrackSize.X = (<span style="color:#66d9ef">int</span>)(MaxWidth * scalingFactor);
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Apply the maximum height, scaled to the current DPI</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> (MaxHeight != <span style="color:#66d9ef">null</span>)
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            minMaxInfo-&gt;ptMaxTrackSize.Y = (<span style="color:#66d9ef">int</span>)(MaxHeight * scalingFactor);
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Call the original window procedure to handle all other messages</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> PInvoke.CallWindowProc(nativeWindowProc, hWnd, msg, wParam, lParam);
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>Using a pointer (unsafe code) instead of <code>StructToPtr</code> is more efficient and straightforward for this scenario. Since the <code>MINMAXINFO</code> structure is already in unmanaged memory (passed via lParam), a pointer allows us to directly modify the data without copying it back and forth. This approach is faster and aligns better with Win32 API practices, where pointers are commonly used to interact with low-level structures. <code>StructToPtr</code> would add unnecessary overhead, making the code slower and more complex.</p>
+<p>In conclusion, by leveraging the Win32 API and a bit of unsafe code, we’ve successfully added a crucial feature that WinUI lacks out of the box: the ability to restrict the window size. This approach not only enhances the user experience by ensuring your app’s window stays within defined bounds but also demonstrates how seamlessly WinUI can be extended with traditional Windows APIs. Whether you’re building a compact utility or a full-fledged desktop application, this technique empowers you to create more polished and professional apps. Happy coding!</p>
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+      <li><a href="https://albertakhmetov.com/tags/c%23/">C#</a></li>
+      <li><a href="https://albertakhmetov.com/tags/.net/">.NET</a></li>
+      <li><a href="https://albertakhmetov.com/tags/winui/">WinUI</a></li>
+      <li><a href="https://albertakhmetov.com/tags/win32/">Win32</a></li>
+    </ul>
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+        <span>&copy; 2025 <a href="https://albertakhmetov.com/">Albert Akhmetov</a></span> · 
+
+    <span>
+        Powered by
+        <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
+        <a href="https://github.com/adityatelange/hugo-PaperMod/" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu')
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = 'copy';
+
+        function copyingDone() {
+            copybutton.innerHTML = 'copied!';
+            setTimeout(() => {
+                copybutton.innerHTML = 'copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+
+        if (container.classList.contains("highlight")) {
+            container.appendChild(copybutton);
+        } else if (container.parentNode.firstChild == container) {
+            
+        } else if (codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName == "TABLE") {
+            
+            codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.appendChild(copybutton);
+        } else {
+            
+            codeblock.parentNode.appendChild(copybutton);
+        }
+    });
+</script>
+</body>
+
+</html>

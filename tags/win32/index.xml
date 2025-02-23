@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>Win32 on Albert Akhmetov</title>
+    <link>https://albertakhmetov.com/tags/win32/</link>
+    <description>Recent content in Win32 on Albert Akhmetov</description>
+    <generator>Hugo -- 0.136.5</generator>
+    <language>en-us</language>
+    <lastBuildDate>Sun, 23 Feb 2025 12:00:00 +0500</lastBuildDate>
+    <atom:link href="https://albertakhmetov.com/tags/win32/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>How to Set a Minimum Window Size in WinUI</title>
+      <link>https://albertakhmetov.com/posts/2025/how-to-set-a-minimum-window-size-in-winui/</link>
+      <pubDate>Sun, 23 Feb 2025 12:00:00 +0500</pubDate>
+      <guid>https://albertakhmetov.com/posts/2025/how-to-set-a-minimum-window-size-in-winui/</guid>
+      <description>&lt;p&gt;WinUI doesn’t support window size limits by default, but you can easily add this feature yourself.&lt;/p&gt;</description>
+    </item>
+  </channel>
+</rss>
