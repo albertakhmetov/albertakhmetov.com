@@ -6,8 +6,15 @@
     <description>Recent content on Albert Akhmetov</description>
     <generator>Hugo -- 0.136.5</generator>
     <language>en-us</language>
-    <lastBuildDate>Sun, 23 Feb 2025 12:00:00 +0500</lastBuildDate>
+    <lastBuildDate>Sun, 02 Mar 2025 12:00:00 +0500</lastBuildDate>
     <atom:link href="https://albertakhmetov.com/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Single Instance Apps in WinUI 3 with C#</title>
+      <link>https://albertakhmetov.com/posts/2025/single-instance-apps-in-winui-3-with-c%23/</link>
+      <pubDate>Sun, 02 Mar 2025 12:00:00 +0500</pubDate>
+      <guid>https://albertakhmetov.com/posts/2025/single-instance-apps-in-winui-3-with-c%23/</guid>
+      <description>&lt;p&gt;In this article, we’ll look at how to restrict your WinUI 3 app to a single instance using C#.&lt;/p&gt;</description>
+    </item>
     <item>
       <title>How to Set a Minimum Window Size in WinUI</title>
       <link>https://albertakhmetov.com/posts/2025/how-to-set-a-minimum-window-size-in-winui/</link>

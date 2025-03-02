@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>Single Instance Apps in WinUI 3 with C# | Albert Akhmetov</title>
+<meta name="keywords" content="How to limit app to single instance in WinUI 3 C#, Prevent multiple launches WinUI 3 application C#, Single instance app WinUI 3 C# example">
+<meta name="description" content="In this article, we’ll look at how to restrict your WinUI 3 app to a single instance using C#.">
+<meta name="author" content="">
+<link rel="canonical" href="https://albertakhmetov.com/posts/2025/single-instance-apps-in-winui-3-with-c%23/">
+<link crossorigin="anonymous" href="/assets/css/stylesheet.css" rel="preload stylesheet" as="style">
+<link rel="icon" href="https://albertakhmetov.com/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="https://albertakhmetov.com/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://albertakhmetov.com/favicon-32x32.png">
+<link rel="apple-touch-icon" href="https://albertakhmetov.com/apple-touch-icon.png">
+<link rel="mask-icon" href="https://albertakhmetov.com/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<link rel="alternate" hreflang="en" href="https://albertakhmetov.com/posts/2025/single-instance-apps-in-winui-3-with-c%23/">
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --code-block-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-track {
+                background: 0 0;
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-thumb {
+                border-color: var(--theme);
+            }
+        }
+
+    </style>
+</noscript><meta property="og:title" content="Single Instance Apps in WinUI 3 with C#" />
+<meta property="og:description" content="In this article, we’ll look at how to restrict your WinUI 3 app to a single instance using C#." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://albertakhmetov.com/posts/2025/single-instance-apps-in-winui-3-with-c%23/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2025-03-02T12:00:00+05:00" />
+<meta property="article:modified_time" content="2025-03-02T12:00:00+05:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Single Instance Apps in WinUI 3 with C#"/>
+<meta name="twitter:description" content="In this article, we’ll look at how to restrict your WinUI 3 app to a single instance using C#."/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Posts",
+      "item": "https://albertakhmetov.com/posts/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "Single Instance Apps in WinUI 3 with C#",
+      "item": "https://albertakhmetov.com/posts/2025/single-instance-apps-in-winui-3-with-c%23/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Single Instance Apps in WinUI 3 with C#",
+  "name": "Single Instance Apps in WinUI 3 with C#",
+  "description": "In this article, we’ll look at how to restrict your WinUI 3 app to a single instance using C#.\n",
+  "keywords": [
+    "How to limit app to single instance in WinUI 3 C#", "Prevent multiple launches WinUI 3 application C#", "Single instance app WinUI 3 C# example"
+  ],
+  "articleBody": "In this article, we’ll look at how to restrict your WinUI 3 app to a single instance using C#.\nThere are cases where running an application in a single instance is essential, such as for media players or system utilities. This article builds on that concept, with specific adjustments for unpackaged applications in WinUI 3.\nWe’ll use the project from the previous article as a starting point.\nWe need to implement two services: an application uniqueness checker and a Named Pipe service. While the first service largely follows the approach from the documentation, the second is necessary for enabling communication between application instances. Named Pipes are a powerful inter-process communication (IPC) mechanism that allows data exchange between applications, even across different processes.\nThe workflow is as follows: First, we check if the current instance of the application is the only one running. If it is, we proceed with initialization. If not, we send the launch parameters (the args from the Main method) via Named Pipes and then terminate the application. This is the key difference from packaged applications. Unpackaged applications don’t use the activation mechanism, making it impossible to pass parameters through the OnLaunched method. Instead, Named Pipes provide a reliable way to handle this scenario.\nThe SingleInstanceService class ensures that only one instance of the application runs at a time and handles sending/receiving notifications via Named Pipes. The IsFirstInstance method checks if the current instance is the first one. If it’s not, it sends the launch arguments to the first instance using Named Pipes and returns false. If it is the first instance, it subscribes to the Activated event to handle future activation requests. Here’s the code:\npublic static bool IsFirstInstance(string[] args) { appInstance = AppInstance.FindOrRegisterForKey(\"com.albertakhmetov.singleinstance\"); if (!appInstance.IsCurrent) { PipeService.SendData(GetData(args)).Wait(); AppActivationArguments a = AppInstance.GetCurrent().GetActivatedEventArgs(); appInstance.RedirectActivationToAsync(a).AsTask().Wait(TimeSpan.FromSeconds(5)); return false; } else { appInstance.Activated += OnAppInstanceActivated; return true; } } To prepare the launch arguments for transmission, the GetData method converts the args array into a single string. If no arguments are provided, it returns an empty string. Here’s how it works:\nprivate static string GetData(string[] args) { if (args == null || args.Length == 0) { return string.Empty; } else { var sb = new StringBuilder(); foreach (var i in args) { if (sb.Length \u003e 0) { sb.AppendLine(); } sb.Append(i); } return sb.ToString(); } } When another instance attempts to activate the application, the OnAppInstanceActivated method is triggered. It brings the first instance’s main window to the foreground, ensuring the user interacts with the correct instance:\nprivate static void OnAppInstanceActivated(object? sender, AppActivationArguments e) { if (appInstance != null) { var process = Process.GetProcessById((int)appInstance!.ProcessId); PInvoke.SetForegroundWindow(new HWND(process.MainWindowHandle)); } } To process data received from Named Pipes, the OnActivated method parses the string and notifies subscribers via the activatedSubject. If the data is empty, it sends an empty array. Here’s the code:\npublic void OnActivated(string? data) { if (string.IsNullOrWhiteSpace(data)) { activatedSubject.OnNext(ImmutableArray\u003cstring\u003e.Empty); } else { using var reader = new StringReader(data); var builder = ImmutableArray.CreateBuilder\u003cstring\u003e(); var line = default(string); while ((line = reader.ReadLine()) != null) { builder.Add(line); } activatedSubject.OnNext(builder.ToImmutable()); } } The class uses a Subject",
+  "wordCount" : "942",
+  "inLanguage": "en",
+  "datePublished": "2025-03-02T12:00:00+05:00",
+  "dateModified": "2025-03-02T12:00:00+05:00",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://albertakhmetov.com/posts/2025/single-instance-apps-in-winui-3-with-c%23/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Albert Akhmetov",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://albertakhmetov.com/favicon.ico"
+    }
+  }
+}
+</script>
+</head>
+
+<body class="" id="top">
+<script>
+    if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark');
+    }
+
+</script>
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="https://albertakhmetov.com/" accesskey="h" title="Albert Akhmetov (Alt + H)">Albert Akhmetov</a>
+            <div class="logo-switches">
+            </div>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="https://albertakhmetov.com/posts/introduce" title="about me">
+                    <span>about me</span>
+                </a>
+            </li>
+            <li>
+                <a href="https://albertakhmetov.com/tags" title="tags">
+                    <span>tags</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    
+    <h1 class="post-title entry-hint-parent">
+      Single Instance Apps in WinUI 3 with C#
+    </h1>
+    <div class="post-meta"><span title='2025-03-02 12:00:00 +0500 +05'>March 2, 2025</span>
+
+</div>
+  </header> 
+  <div class="post-content"><p>In this article, we’ll look at how to restrict your WinUI 3 app to a single instance using C#.</p>
+<p>There are cases where running an application in a single instance is essential, such as for media players or system utilities. This article builds on <a href="https://learn.microsoft.com/en-us/windows/apps/windows-app-sdk/applifecycle/applifecycle-single-instance">that concept</a>, with specific adjustments for unpackaged applications in WinUI 3.</p>
+<p>We’ll use the project from the <a href="https://albertakhmetov.com/posts/2025/how-to-properly-use-.net-build-in-dependency-injection-with-winui-apps/">previous article</a> as a starting point.</p>
+<p>We need to implement two services: an application uniqueness checker and a Named Pipe service. While the first service largely follows the approach from the documentation, the second is necessary for enabling communication between application instances. Named Pipes are a powerful inter-process communication (IPC) mechanism that allows data exchange between applications, even across different processes.</p>
+<p>The workflow is as follows: First, we check if the current instance of the application is the only one running. If it is, we proceed with initialization. If not, we send the launch parameters (the args from the Main method) via Named Pipes and then terminate the application. This is the key difference from packaged applications. Unpackaged applications don’t use the activation mechanism, making it impossible to pass parameters through the <code>OnLaunched</code> method. Instead, Named Pipes provide a reliable way to handle this scenario.</p>
+<p>The <code>SingleInstanceService</code> class ensures that only one instance of the application runs at a time and handles sending/receiving notifications via Named Pipes. The <code>IsFirstInstance</code> method checks if the current instance is the first one. If it’s not, it sends the launch arguments to the first instance using Named Pipes and returns <code>false</code>. If it is the first instance, it subscribes to the <code>Activated</code> event to handle future activation requests. Here’s the code:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-csharp" data-lang="csharp"><span style="display:flex;"><span><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">bool</span> IsFirstInstance(<span style="color:#66d9ef">string</span>[] args)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    appInstance = AppInstance.FindOrRegisterForKey(<span style="color:#e6db74">&#34;com.albertakhmetov.singleinstance&#34;</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> (!appInstance.IsCurrent)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        PipeService.SendData(GetData(args)).Wait();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        AppActivationArguments a = AppInstance.GetCurrent().GetActivatedEventArgs();
+</span></span><span style="display:flex;"><span>        appInstance.RedirectActivationToAsync(a).AsTask().Wait(TimeSpan.FromSeconds(<span style="color:#ae81ff">5</span>));
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">false</span>;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">else</span>
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        appInstance.Activated += OnAppInstanceActivated;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">true</span>;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>To prepare the launch arguments for transmission, the <code>GetData</code> method converts the <code>args</code> array into a single string. If no arguments are provided, it returns an empty string. Here’s how it works:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-csharp" data-lang="csharp"><span style="display:flex;"><span><span style="color:#66d9ef">private</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">string</span> GetData(<span style="color:#66d9ef">string</span>[] args)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> (args == <span style="color:#66d9ef">null</span> || args.Length == <span style="color:#ae81ff">0</span>)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">string</span>.Empty;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">else</span>
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">var</span> sb = <span style="color:#66d9ef">new</span> StringBuilder();
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">foreach</span> (<span style="color:#66d9ef">var</span> i <span style="color:#66d9ef">in</span> args)
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">if</span> (sb.Length &gt; <span style="color:#ae81ff">0</span>)
+</span></span><span style="display:flex;"><span>            {
+</span></span><span style="display:flex;"><span>                sb.AppendLine();
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            sb.Append(i);
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> sb.ToString();
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>When another instance attempts to activate the application, the <code>OnAppInstanceActivated</code> method is triggered. It brings the first instance’s main window to the foreground, ensuring the user interacts with the correct instance:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-csharp" data-lang="csharp"><span style="display:flex;"><span><span style="color:#66d9ef">private</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">void</span> OnAppInstanceActivated(<span style="color:#66d9ef">object?</span> sender, AppActivationArguments e)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> (appInstance != <span style="color:#66d9ef">null</span>)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">var</span> process = Process.GetProcessById((<span style="color:#66d9ef">int</span>)appInstance!.ProcessId);
+</span></span><span style="display:flex;"><span>        PInvoke.SetForegroundWindow(<span style="color:#66d9ef">new</span> HWND(process.MainWindowHandle));
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>To process data received from Named Pipes, the <code>OnActivated</code> method parses the string and notifies subscribers via the <code>activatedSubject</code>. If the data is empty, it sends an empty array. Here’s the code:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-csharp" data-lang="csharp"><span style="display:flex;"><span><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">void</span> OnActivated(<span style="color:#66d9ef">string?</span> data)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> (<span style="color:#66d9ef">string</span>.IsNullOrWhiteSpace(data))
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        activatedSubject.OnNext(ImmutableArray&lt;<span style="color:#66d9ef">string</span>&gt;.Empty);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">else</span>
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">using</span> var reader = <span style="color:#66d9ef">new</span> StringReader(data);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">var</span> builder = ImmutableArray.CreateBuilder&lt;<span style="color:#66d9ef">string</span>&gt;();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">var</span> line = <span style="color:#66d9ef">default</span>(<span style="color:#66d9ef">string</span>);
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">while</span> ((line = reader.ReadLine()) != <span style="color:#66d9ef">null</span>)
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            builder.Add(line);
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        activatedSubject.OnNext(builder.ToImmutable());
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>The class uses a <code>Subject&lt;ImmutableArray&lt;string&gt;&gt;</code> to provide a reactive way to notify subscribers when the application is activated with new arguments. The <code>Activated</code> property exposes this as an <code>IObservable</code> for external components to subscribe to. Here’s the relevant code:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-csharp" data-lang="csharp"><span style="display:flex;"><span><span style="color:#66d9ef">private</span> Subject&lt;ImmutableArray&lt;<span style="color:#66d9ef">string</span>&gt;&gt; activatedSubject;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">public</span> SingleInstanceService()
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    activatedSubject = <span style="color:#66d9ef">new</span> Subject&lt;ImmutableArray&lt;<span style="color:#66d9ef">string</span>&gt;&gt;();
+</span></span><span style="display:flex;"><span>    Activated = activatedSubject.AsObservable();
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">public</span> IObservable&lt;ImmutableArray&lt;<span style="color:#66d9ef">string</span>&gt;&gt; Activated { <span style="color:#66d9ef">get</span>; }
+</span></span></code></pre></div><p>Finally, the <code>appInstance</code> field stores the <code>AppInstance</code> object, which is used to manage application instances and handle activation events:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-csharp" data-lang="csharp"><span style="display:flex;"><span><span style="color:#66d9ef">private</span> <span style="color:#66d9ef">static</span> AppInstance? appInstance;
+</span></span></code></pre></div><p>The <code>PipeService</code> class handles communication between application instances using Named Pipes. It implements <code>IHostedService</code> to run as a background service, listening for incoming data and notifying the <code>ISingleInstanceService</code> when new data is received.</p>
+<p>The <code>SendData</code> method sends a string to the Named Pipe server. It creates a <code>NamedPipeClientStream</code>, connects to the server, and writes the data using a <code>StreamWriter</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-csharp" data-lang="csharp"><span style="display:flex;"><span><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">async</span> Task SendData(<span style="color:#66d9ef">string</span> data)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">using</span> (<span style="color:#66d9ef">var</span> pipeClient = <span style="color:#66d9ef">new</span> NamedPipeClientStream(<span style="color:#e6db74">&#34;.&#34;</span>, PIPE_NAME, PipeDirection.Out, PipeOptions.Asynchronous))
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">await</span> pipeClient.ConnectAsync(<span style="color:#ae81ff">1000</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">using</span> (<span style="color:#66d9ef">var</span> writer = <span style="color:#66d9ef">new</span> StreamWriter(pipeClient, Encoding.UTF8))
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">await</span> writer.WriteAsync(data);
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">await</span> writer.FlushAsync();
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>The class constructor initializes the service with a reference to the <code>ISingleInstanceService</code> and a <code>CancellationTokenSource</code> for managing the background task:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-csharp" data-lang="csharp"><span style="display:flex;"><span><span style="color:#66d9ef">private</span> <span style="color:#66d9ef">readonly</span> ISingleInstanceService singleInstanceService;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">private</span> CancellationTokenSource tokenSource;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">public</span> PipeService(ISingleInstanceService singleInstanceService)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">this</span>.singleInstanceService = singleInstanceService;
+</span></span><span style="display:flex;"><span>    tokenSource = <span style="color:#66d9ef">new</span> CancellationTokenSource();
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>The <code>StartAsync</code> method starts the Named Pipe server in a background task. It continuously listens for incoming connections, reads data from the pipe, and forwards it to the <code>ISingleInstanceService</code> via the <code>OnActivated</code> method. The loop runs until the cancellation token is triggered. Here’s how it works:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-csharp" data-lang="csharp"><span style="display:flex;"><span><span style="color:#66d9ef">public</span> Task StartAsync(CancellationToken cancellationToken)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> Task.Factory.StartNew(<span style="color:#66d9ef">async</span> x =&gt;
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">var</span> token = (CancellationToken)x!;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">while</span> (<span style="color:#66d9ef">true</span>)
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">using</span> (<span style="color:#66d9ef">var</span> pipeServer = <span style="color:#66d9ef">new</span> NamedPipeServerStream(PIPE_NAME, PipeDirection.InOut, <span style="color:#ae81ff">1</span>, PipeTransmissionMode.Byte, PipeOptions.Asynchronous))
+</span></span><span style="display:flex;"><span>            {
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">await</span> pipeServer.WaitForConnectionAsync(token);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">using</span> (<span style="color:#66d9ef">var</span> reader = <span style="color:#66d9ef">new</span> StreamReader(pipeServer, Encoding.UTF8))
+</span></span><span style="display:flex;"><span>                {
+</span></span><span style="display:flex;"><span>                    <span style="color:#66d9ef">var</span> receivedData = <span style="color:#66d9ef">await</span> reader.ReadToEndAsync();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>                    singleInstanceService.OnActivated(receivedData);
+</span></span><span style="display:flex;"><span>                }
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">if</span> (token.IsCancellationRequested)
+</span></span><span style="display:flex;"><span>            {
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">break</span>;
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }, tokenSource.Token);
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>To stop the service, the <code>StopAsync</code> method cancels the background task using the <code>CancellationTokenSource</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-csharp" data-lang="csharp"><span style="display:flex;"><span><span style="color:#66d9ef">public</span> Task StopAsync(CancellationToken cancellationToken)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> tokenSource.CancelAsync();
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>You can find an example of how to use this implementation in the provided project: <a href="https://github.com/albertakhmetov/albertakhmetov.com/tree/main/SingleInstance">SingleInstance Example on GitHub</a>. After compiling the project, you can test the application’s behavior. To observe how the first instance works, launch the program under the debugger and then try running the executable file from File Explorer. To test launching with arguments, simply drag and drop one or more files onto the executable file. To see what happens when the application is already running, do the opposite: first launch the executable from File Explorer, and then start the program under the debugger. Happy coding!</p>
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+      <li><a href="https://albertakhmetov.com/tags/c%23/">C#</a></li>
+      <li><a href="https://albertakhmetov.com/tags/.net/">.NET</a></li>
+      <li><a href="https://albertakhmetov.com/tags/winui/">WinUI</a></li>
+      <li><a href="https://albertakhmetov.com/tags/winapi/">WinAPI</a></li>
+    </ul>
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+        <span>&copy; 2025 <a href="https://albertakhmetov.com/">Albert Akhmetov</a></span> · 
+
+    <span>
+        Powered by
+        <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
+        <a href="https://github.com/adityatelange/hugo-PaperMod/" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu')
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = 'copy';
+
+        function copyingDone() {
+            copybutton.innerHTML = 'copied!';
+            setTimeout(() => {
+                copybutton.innerHTML = 'copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+
+        if (container.classList.contains("highlight")) {
+            container.appendChild(copybutton);
+        } else if (container.parentNode.firstChild == container) {
+            
+        } else if (codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName == "TABLE") {
+            
+            codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.appendChild(copybutton);
+        } else {
+            
+            codeblock.parentNode.appendChild(copybutton);
+        }
+    });
+</script>
+</body>
+
+</html>
