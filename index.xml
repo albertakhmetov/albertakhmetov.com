@@ -6,8 +6,15 @@
     <description>Recent content on Albert Akhmetov</description>
     <generator>Hugo -- 0.136.5</generator>
     <language>en-us</language>
-    <lastBuildDate>Sun, 02 Mar 2025 12:00:00 +0500</lastBuildDate>
+    <lastBuildDate>Sun, 09 Mar 2025 12:00:00 +0500</lastBuildDate>
     <atom:link href="https://albertakhmetov.com/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Prevent Screen Sleep in C# WinUI Apps</title>
+      <link>https://albertakhmetov.com/posts/2025/prevent-screen-sleep-in-c%23-winui-apps/</link>
+      <pubDate>Sun, 09 Mar 2025 12:00:00 +0500</pubDate>
+      <guid>https://albertakhmetov.com/posts/2025/prevent-screen-sleep-in-c%23-winui-apps/</guid>
+      <description>&lt;p&gt;Let&amp;rsquo;s consider how to keep your screen awake in WinUI apps using simple C# code.&lt;/p&gt;</description>
+    </item>
     <item>
       <title>Single Instance Apps in WinUI 3 with C#</title>
       <link>https://albertakhmetov.com/posts/2025/single-instance-apps-in-winui-3-with-c%23/</link>

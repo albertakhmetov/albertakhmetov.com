@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>Prevent Screen Sleep in C# WinUI Apps | Albert Akhmetov</title>
+<meta name="keywords" content="How to stop screen sleep in WinUI C# app, Disable screen timeout in WinUI application, Keep screen awake in WinUI C# program">
+<meta name="description" content="Let&rsquo;s consider how to keep your screen awake in WinUI apps using simple C# code.">
+<meta name="author" content="">
+<link rel="canonical" href="https://albertakhmetov.com/posts/2025/prevent-screen-sleep-in-c%23-winui-apps/">
+<link crossorigin="anonymous" href="/assets/css/stylesheet.css" rel="preload stylesheet" as="style">
+<link rel="icon" href="https://albertakhmetov.com/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="https://albertakhmetov.com/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://albertakhmetov.com/favicon-32x32.png">
+<link rel="apple-touch-icon" href="https://albertakhmetov.com/apple-touch-icon.png">
+<link rel="mask-icon" href="https://albertakhmetov.com/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<link rel="alternate" hreflang="en" href="https://albertakhmetov.com/posts/2025/prevent-screen-sleep-in-c%23-winui-apps/">
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --code-block-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-track {
+                background: 0 0;
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-thumb {
+                border-color: var(--theme);
+            }
+        }
+
+    </style>
+</noscript><meta property="og:title" content="Prevent Screen Sleep in C# WinUI Apps" />
+<meta property="og:description" content="Let&rsquo;s consider how to keep your screen awake in WinUI apps using simple C# code." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://albertakhmetov.com/posts/2025/prevent-screen-sleep-in-c%23-winui-apps/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2025-03-09T12:00:00+05:00" />
+<meta property="article:modified_time" content="2025-03-09T12:00:00+05:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Prevent Screen Sleep in C# WinUI Apps"/>
+<meta name="twitter:description" content="Let&rsquo;s consider how to keep your screen awake in WinUI apps using simple C# code."/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Posts",
+      "item": "https://albertakhmetov.com/posts/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "Prevent Screen Sleep in C# WinUI Apps",
+      "item": "https://albertakhmetov.com/posts/2025/prevent-screen-sleep-in-c%23-winui-apps/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Prevent Screen Sleep in C# WinUI Apps",
+  "name": "Prevent Screen Sleep in C# WinUI Apps",
+  "description": "Let\u0026rsquo;s consider how to keep your screen awake in WinUI apps using simple C# code.\n",
+  "keywords": [
+    "How to stop screen sleep in WinUI C# app", "Disable screen timeout in WinUI application", "Keep screen awake in WinUI C# program"
+  ],
+  "articleBody": "Let’s consider how to keep your screen awake in WinUI apps using simple C# code.\nActually, it’s very simple to do this — you just need to use the SetThreadExecutionState function.\nThis function is well-documented. From my experience, I can add that when using ES_CONTINUOUS, the function call applies to the calling thread. This means you should call it from a long-running thread, such as the UI thread. Otherwise, once the thread is terminated, the prevention of sleep mode will also stop. If you don’t use ES_CONTINUOUS, the SetThreadExecutionState call only resets the system idle timer. In that case, you’ll need to call this function repeatedly at regular intervals.\nHere’s an example of code to enable (or disable) the “wake” mode when a ToggleButton is clicked:\nprivate void toggle_Click(object sender, RoutedEventArgs e) { var state = EXECUTION_STATE.ES_CONTINUOUS; if (toggle.IsChecked == true) { state |= EXECUTION_STATE.ES_DISPLAY_REQUIRED; } Windows.Win32.PInvoke.SetThreadExecutionState(state); } The code example is, as always, available via the link.\n",
+  "wordCount" : "158",
+  "inLanguage": "en",
+  "datePublished": "2025-03-09T12:00:00+05:00",
+  "dateModified": "2025-03-09T12:00:00+05:00",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://albertakhmetov.com/posts/2025/prevent-screen-sleep-in-c%23-winui-apps/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Albert Akhmetov",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://albertakhmetov.com/favicon.ico"
+    }
+  }
+}
+</script>
+</head>
+
+<body class="" id="top">
+<script>
+    if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark');
+    }
+
+</script>
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="https://albertakhmetov.com/" accesskey="h" title="Albert Akhmetov (Alt + H)">Albert Akhmetov</a>
+            <div class="logo-switches">
+            </div>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="https://albertakhmetov.com/posts/introduce" title="about me">
+                    <span>about me</span>
+                </a>
+            </li>
+            <li>
+                <a href="https://albertakhmetov.com/tags" title="tags">
+                    <span>tags</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    
+    <h1 class="post-title entry-hint-parent">
+      Prevent Screen Sleep in C# WinUI Apps
+    </h1>
+    <div class="post-meta"><span title='2025-03-09 12:00:00 +0500 +05'>March 9, 2025</span>
+
+</div>
+  </header> 
+  <div class="post-content"><p>Let&rsquo;s consider how to keep your screen awake in WinUI apps using simple C# code.</p>
+<p>Actually, it’s very simple to do this — you just need to use the <a href="https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-setthreadexecutionstate"><code>SetThreadExecutionState</code></a> function.</p>
+<p>This function is well-documented. From my experience, I can add that when using <code>ES_CONTINUOUS</code>, the function call applies to the calling thread. This means you should call it from a long-running thread, such as the UI thread. Otherwise, once the thread is terminated, the prevention of sleep mode will also stop. If you don’t use <code>ES_CONTINUOUS</code>, the <code>SetThreadExecutionState</code> call only resets the system idle timer. In that case, you’ll need to call this function repeatedly at regular intervals.</p>
+<p>Here’s an example of code to enable (or disable) the &ldquo;wake&rdquo; mode when a ToggleButton is clicked:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c#" data-lang="c#"><span style="display:flex;"><span><span style="color:#66d9ef">private</span> <span style="color:#66d9ef">void</span> toggle_Click(<span style="color:#66d9ef">object</span> sender, RoutedEventArgs e)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">var</span> state = EXECUTION_STATE.ES_CONTINUOUS;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> (toggle.IsChecked == <span style="color:#66d9ef">true</span>)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        state |= EXECUTION_STATE.ES_DISPLAY_REQUIRED;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    Windows.Win32.PInvoke.SetThreadExecutionState(state);
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>The code example is, as always, available via the <a href="https://github.com/albertakhmetov/albertakhmetov.com/tree/main/Awake">link</a>.</p>
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+      <li><a href="https://albertakhmetov.com/tags/c%23/">C#</a></li>
+      <li><a href="https://albertakhmetov.com/tags/.net/">.NET</a></li>
+      <li><a href="https://albertakhmetov.com/tags/winapi/">WinAPI</a></li>
+      <li><a href="https://albertakhmetov.com/tags/winui/">WinUI</a></li>
+    </ul>
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+        <span>&copy; 2025 <a href="https://albertakhmetov.com/">Albert Akhmetov</a></span> · 
+
+    <span>
+        Powered by
+        <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
+        <a href="https://github.com/adityatelange/hugo-PaperMod/" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu')
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = 'copy';
+
+        function copyingDone() {
+            copybutton.innerHTML = 'copied!';
+            setTimeout(() => {
+                copybutton.innerHTML = 'copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+
+        if (container.classList.contains("highlight")) {
+            container.appendChild(copybutton);
+        } else if (container.parentNode.firstChild == container) {
+            
+        } else if (codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName == "TABLE") {
+            
+            codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.appendChild(copybutton);
+        } else {
+            
+            codeblock.parentNode.appendChild(copybutton);
+        }
+    });
+</script>
+</body>
+
+</html>
