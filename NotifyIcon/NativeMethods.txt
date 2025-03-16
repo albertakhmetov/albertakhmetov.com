@@ -1,0 +1,9 @@
+RegisterClass
+UnregisterClass
+CreateWindowEx
+DestroyWindow
+DefWindowProc
+
+ExtractIcon
+RegisterWindowMessage
+Shell_NotifyIcon
