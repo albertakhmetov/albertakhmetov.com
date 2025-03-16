@@ -6,8 +6,15 @@
     <description>Recent content in C# on Albert Akhmetov</description>
     <generator>Hugo -- 0.136.5</generator>
     <language>en-us</language>
-    <lastBuildDate>Sun, 09 Mar 2025 12:00:00 +0500</lastBuildDate>
+    <lastBuildDate>Sun, 16 Mar 2025 12:00:00 +0500</lastBuildDate>
     <atom:link href="https://albertakhmetov.com/tags/c%23/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Using NotifyIcon in WinUI 3</title>
+      <link>https://albertakhmetov.com/posts/2025/using-notifyicon-in-winui-3/</link>
+      <pubDate>Sun, 16 Mar 2025 12:00:00 +0500</pubDate>
+      <guid>https://albertakhmetov.com/posts/2025/using-notifyicon-in-winui-3/</guid>
+      <description>&lt;p&gt;Learn how to use &lt;strong&gt;NotifyIcon&lt;/strong&gt; in WinUI 3 apps without third-party libraries.&lt;/p&gt;</description>
+    </item>
     <item>
       <title>Prevent Screen Sleep in C# WinUI Apps</title>
       <link>https://albertakhmetov.com/posts/2025/prevent-screen-sleep-in-c%23-winui-apps/</link>

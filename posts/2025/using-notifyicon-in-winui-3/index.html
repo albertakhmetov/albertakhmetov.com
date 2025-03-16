@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>Using NotifyIcon in WinUI 3 | Albert Akhmetov</title>
+<meta name="keywords" content="How to add NotifyIcon in WinUI 3, WinUI 3 NotifyIcon example code, NotifyIcon WinUI 3 tutorial for beginners">
+<meta name="description" content="Learn how to use NotifyIcon in WinUI 3 apps without third-party libraries.">
+<meta name="author" content="">
+<link rel="canonical" href="https://albertakhmetov.com/posts/2025/using-notifyicon-in-winui-3/">
+<link crossorigin="anonymous" href="/assets/css/stylesheet.css" rel="preload stylesheet" as="style">
+<link rel="icon" href="https://albertakhmetov.com/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="https://albertakhmetov.com/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://albertakhmetov.com/favicon-32x32.png">
+<link rel="apple-touch-icon" href="https://albertakhmetov.com/apple-touch-icon.png">
+<link rel="mask-icon" href="https://albertakhmetov.com/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<link rel="alternate" hreflang="en" href="https://albertakhmetov.com/posts/2025/using-notifyicon-in-winui-3/">
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --code-block-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-track {
+                background: 0 0;
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-thumb {
+                border-color: var(--theme);
+            }
+        }
+
+    </style>
+</noscript><meta property="og:title" content="Using NotifyIcon in WinUI 3" />
+<meta property="og:description" content="Learn how to use NotifyIcon in WinUI 3 apps without third-party libraries." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://albertakhmetov.com/posts/2025/using-notifyicon-in-winui-3/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2025-03-16T12:00:00+05:00" />
+<meta property="article:modified_time" content="2025-03-16T12:00:00+05:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Using NotifyIcon in WinUI 3"/>
+<meta name="twitter:description" content="Learn how to use NotifyIcon in WinUI 3 apps without third-party libraries."/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Posts",
+      "item": "https://albertakhmetov.com/posts/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "Using NotifyIcon in WinUI 3",
+      "item": "https://albertakhmetov.com/posts/2025/using-notifyicon-in-winui-3/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Using NotifyIcon in WinUI 3",
+  "name": "Using NotifyIcon in WinUI 3",
+  "description": "Learn how to use NotifyIcon in WinUI 3 apps without third-party libraries.\n",
+  "keywords": [
+    "How to add NotifyIcon in WinUI 3", "WinUI 3 NotifyIcon example code", "NotifyIcon WinUI 3 tutorial for beginners"
+  ],
+  "articleBody": "Learn how to use NotifyIcon in WinUI 3 apps without third-party libraries.\nWinUI doesn’t natively support NotifyIcon, but you can easily fix this using Win32 API. By leveraging Win32, you can add a system tray icon to your WinUI 3 app and handle its functionality seamlessly. This approach keeps your app lightweight and avoids third-party dependencies.\nEssentially, implementing NotifyIcon requires just one key function: Shell_NotifyIcon. The real challenge lies in handling messages from the icon, such as clicks or context menu actions.\nTo get started, you need to define the icon GUID, window message IDs, and the window handle that will process these messages. These elements are essential for setting up and ensuring the proper functioning of NotifyIcon in your application.\nThe icon GUID is essential for the system to uniquely identify your application’s icon. Without a GUID, the icon will be tied to the executable file’s path. If you move the program, the system will treat it as a new icon, leading to duplicate entries in the icon settings menu.\nTo handle messages, we’ll create an invisible window that will receive notifications from the tray icon. To simplify the implementation, we’ll use the CsWin32 library, which significantly reduces the complexity of working with system APIs.\nThe NativeWindow class looks like this:\nprivate sealed class NativeWindow { // Unique window identifier based on the NotifyIcon's ID private readonly string windowId; // Reference to the NotifyIcon instance that manages the tray icon private NotifyIcon owner; // Delegate for handling window messages private WNDPROC proc; // Constructor: creates an invisible window for message handling public unsafe NativeWindow(NotifyIcon owner) { // Ensure the provided owner is not null ArgumentNullException.ThrowIfNull(owner); // Store the reference to the owner (NotifyIcon) this.owner = owner; // Generate a unique window identifier windowId = $\"class:{owner.Id}\"; // Set OnWindowMessageReceived as the message handler proc = OnWindowMessageReceived; // Pin the windowId string in memory for passing to Win32 API fixed (char* className = windowId) { // Create a WNDCLASSW structure to register the window class var classInfo = new WNDCLASSW() { lpfnWndProc = proc, // Specify the message handler lpszClassName = new PCWSTR(className), // Unique class name }; // Register the window class with the system PInvoke.RegisterClass(classInfo); // Create an invisible window with the registered class Hwnd = PInvoke.CreateWindowEx( dwExStyle: 0, // Extended window styles (not used) lpClassName: windowId, // Window class name lpWindowName: windowId, // Window name (same as class) dwStyle: 0, // Window styles (not used, window is invisible) X: 0, // Window X position Y: 0, // Window Y position nWidth: 0, // Window width nHeight: 0, // Window height hWndParent: new HWND(IntPtr.Zero), // Parent window (none) hMenu: null, // Menu (none) hInstance: null, // Application instance (not used) lpParam: null); // Additional parameters (not used) } } // Destructor: automatically releases resources if Dispose was not called ~NativeWindow() { Dispose(false); } // Property: returns the handle of the created window public HWND Hwnd { get; private set; } // Dispose method: releases window resources public void Dispose() { Dispose(true); GC.SuppressFinalize(this); // Prevent the destructor from being called } // Internal Dispose method: performs the actual resource cleanup private void Dispose(bool isDisposing) { // Check if the window has already been destroyed if (Hwnd != HWND.Null) { // Destroy the window PInvoke.DestroyWindow(hWnd: Hwnd); Hwnd = HWND.Null; // Reset the window handle // Unregister the window class PInvoke.UnregisterClass( lpClassName: windowId, hInstance: null); } } // Window message handler: called when receiving messages from the tray icon private LRESULT OnWindowMessageReceived(HWND hwnd, uint msg, WPARAM wParam, LPARAM lParam) { // Forward the message to NotifyIcon for processing owner.ProcessMessage(msg, wParam, lParam); // Call the default window procedure for unhandled messages return PInvoke.DefWindowProc( hWnd: hwnd, Msg: msg, wParam: wParam, lParam: lParam); } } The Shell_NotifyIcon function works with the NOTIFYICONDATAW structure. This structure contains both the previously mentioned parameters (which typically don’t change) and values that define the appearance of the icon, such as the icon image and the tooltip text:\nvar data = new NOTIFYICONDATAW { // Set the size of the structure. This is required for the Shell_NotifyIcon function // to correctly interpret the structure, especially across different versions of Windows. cbSize = (uint)sizeof(NOTIFYICONDATAW), // Specify the fields in the structure that are being used. // NIF_TIP: The szTip (tooltip) field is valid. // NIF_MESSAGE: The uCallbackMessage field is valid (used for handling icon events). // NIF_GUID: The guidItem field is valid (unique identifier for the icon). // NIF_ICON: The hIcon field is valid (icon image). uFlags = NOTIFY_ICON_DATA_FLAGS.NIF_TIP | NOTIFY_ICON_DATA_FLAGS.NIF_MESSAGE | NOTIFY_ICON_DATA_FLAGS.NIF_GUID | NOTIFY_ICON_DATA_FLAGS.NIF_ICON, // Set the tooltip text that appears when hovering over the icon. szTip = Text, // Set the icon handle. If no icon is provided, use a null handle (nint.Zero). hIcon = new HICON(Icon?.Handle ?? nint.Zero), // Set the handle of the window that will receive messages from the tray icon. hWnd = window.Hwnd, // Set the custom message ID that will be sent to the window when the icon is interacted with. uCallbackMessage = MESSAGE_ID, // Set the unique identifier (GUID) for the icon. This ensures the icon is uniquely identified // even if the executable path changes. guidItem = Id, // Set additional options in the anonymous union. Anonymous = { // Explicitly set the version of the NOTIFYICONDATAW structure. // Version 5 is the latest and supports modern features like high-resolution icons // and extended tooltips. uVersion = 5 } }; With the tray icon, we’ll perform three basic actions: adding, updating, and hiding it. To achieve this, we’ll implement the following methods:\n// Method to show (add) the tray icon in the system tray public void Show() { // Retrieve the NOTIFYICONDATAW structure with the current icon settings var data = GetData(); // Call Shell_NotifyIcon with the NIM_ADD flag to add the icon to the tray var result = PInvoke.Shell_NotifyIcon( dwMessage: NOTIFY_ICON_MESSAGE.NIM_ADD, // Add the icon lpData: data); // Pass the icon data // If the operation was successful, update the visibility flag if (result) { IsVisible = true; } } // Method to hide (remove) the tray icon from the system tray public void Hide() { // Retrieve the NOTIFYICONDATAW structure with the current icon settings var data = GetData(); // Call Shell_NotifyIcon with the NIM_DELETE flag to remove the icon from the tray var result = PInvoke.Shell_NotifyIcon( dwMessage: NOTIFY_ICON_MESSAGE.NIM_DELETE, // Delete the icon lpData: data); // Pass the icon data // If the operation was successful, update the visibility flag if (result) { IsVisible = false; } } // Method to update the tray icon's properties (e.g., icon, tooltip) private void Update() { // Only update the icon if it is currently visible if (IsVisible) { // Retrieve the NOTIFYICONDATAW structure with the updated settings var data = GetData(); // Call Shell_NotifyIcon with the NIM_MODIFY flag to update the icon PInvoke.Shell_NotifyIcon( dwMessage: NOTIFY_ICON_MESSAGE.NIM_MODIFY, // Modify the icon lpData: data); // Pass the updated icon data } } The Update method is private because it is called from the Icon and Text properties to update the tray icon:\n// Property for the tooltip text of the tray icon public string Text { // Getter: returns the current text or an empty string if null get =\u003e text ?? string.Empty; // Setter: updates the text and refreshes the tray icon set { // Check if the new value is the same as the current value if (text == value) { return; // No changes needed, exit early } // Update the text field with the new value text = value; // Call the Update method to refresh the tray icon with the new text Update(); } } // Property for the icon image of the tray icon public IIconFile? Icon { // Getter: returns the current icon get =\u003e icon; // Setter: updates the icon and refreshes the tray icon set { // Check if the current icon exists and should be disposed if (icon != null \u0026\u0026 !keepIconAlive) { icon.Dispose(); // Release resources of the old icon } // Update the icon field with the new value icon = value; // Call the Update method to refresh the tray icon with the new icon Update(); } } IIconFile is an abstraction over an icon that handles loading the icon into memory and releasing it, providing us only its handle.\nThe ProcessMessage method handles messages from the tray icon. One of the most important messages to handle is WM_TASKBARCREATED. This message is sent when the taskbar is recreated, such as when Explorer restarts. When this happens, the tray icon disappears, and we need to re-display it by calling the Show method. Without handling this message, the icon would remain invisible after a taskbar restart.\nIn the past, the WM_TASKBARCREATED message was also sent when the primary display’s DPI changed, like when connecting an external monitor with a different DPI. This allowed applications to adapt the icon to the new DPI settings. However, in current versions of Windows 11, this functionality has been removed. While it’s unclear if Microsoft will bring it back, it’s something to keep in mind when developing for modern Windows versions.\n// Register a custom window message \"TaskbarCreated\" and store its unique ID. // This message is sent by the system when the taskbar is recreated (e.g., after Explorer restarts). private static readonly uint WM_TASKBARCREATED = PInvoke.RegisterWindowMessage(\"TaskbarCreated\"); private void ProcessMessage(uint messageId, WPARAM wParam, LPARAM lParam) { // Check if the message is WM_TASKBARCREATED, which indicates the taskbar has been recreated if (messageId == WM_TASKBARCREATED) { // Re-display the tray icon by calling the Show method Show(); return; // Exit early since no further processing is needed for this message } // If the message is not the custom MESSAGE_ID (used for tray icon events), ignore it if (messageId != MESSAGE_ID) { return; // Exit early } // Handle specific tray icon events based on the value of lParam switch (lParam.Value) { // Handle left mouse button click (WM_LBUTTONUP) case WM_LBUTTONUP: // Handle right mouse button click (WM_RBUTTONUP) case WM_RBUTTONUP: // Trigger the OnClick event to notify subscribers of a click event OnClick(EventArgs.Empty); break; } } This code demonstrates how to use our implementation of NotifyIcon. It includes creating a system tray icon, handling icon clicks, and managing its resources. The full example is available at GitHub.\npublic partial class MainWindow : Window { // Declare a NotifyIcon instance to manage the system tray icon private NotifyIcon notifyIcon; // Constructor for the MainWindow class public MainWindow() { // Initialize the window components this.InitializeComponent(); // Create a new NotifyIcon instance with the following properties: // - A unique GUID to identify the icon // - Tooltip text (\"Click me\") // - An icon loaded from a library file (shell32.dll, index 130) notifyIcon = new NotifyIcon() { Id = Guid.Parse(\"55DE2A49-087C-4331-A76C-6AA2212F3C39\"), Text = \"Click me\", Icon = new LibIcon(\"shell32.dll\", 130) }; // Subscribe to the Click event of the NotifyIcon notifyIcon.Click += NotifyIcon_Click; // Display the tray icon notifyIcon.Show(); // Ensure the NotifyIcon is properly disposed of when the window is closed Closed += (_, _) =\u003e notifyIcon?.Dispose(); } // Event handler for the NotifyIcon's Click event private void NotifyIcon_Click(object? sender, EventArgs e) { // Toggle the visibility of the window if (AppWindow.IsVisible) { AppWindow.Hide(); // Hide the window if it's visible } else { AppWindow.Show(); // Show the window if it's hidden } } // Nested class LibIcon: implements IIconFile to load icons from library files public sealed class LibIcon : IIconFile { // Handle to the loaded icon private DestroyIconSafeHandle iconHandle; // Constructor: loads an icon from a library file (e.g., shell32.dll) public LibIcon(string fileName, uint iconIndex) { // Extract the icon from the specified file and index iconHandle = PInvoke.ExtractIcon(fileName, iconIndex); } // Property: returns the handle to the loaded icon public nint Handle =\u003e iconHandle.DangerousGetHandle(); // Method: disposes of the icon handle to free resources public void Dispose() { // Check if the handle is valid before disposing if (!iconHandle.IsInvalid) { iconHandle?.Dispose(); // Release the icon handle } } } } ",
+  "wordCount" : "1992",
+  "inLanguage": "en",
+  "datePublished": "2025-03-16T12:00:00+05:00",
+  "dateModified": "2025-03-16T12:00:00+05:00",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://albertakhmetov.com/posts/2025/using-notifyicon-in-winui-3/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Albert Akhmetov",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://albertakhmetov.com/favicon.ico"
+    }
+  }
+}
+</script>
+</head>
+
+<body class="" id="top">
+<script>
+    if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark');
+    }
+
+</script>
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="https://albertakhmetov.com/" accesskey="h" title="Albert Akhmetov (Alt + H)">Albert Akhmetov</a>
+            <div class="logo-switches">
+            </div>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="https://albertakhmetov.com/posts/introduce" title="about me">
+                    <span>about me</span>
+                </a>
+            </li>
+            <li>
+                <a href="https://albertakhmetov.com/tags" title="tags">
+                    <span>tags</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    
+    <h1 class="post-title entry-hint-parent">
+      Using NotifyIcon in WinUI 3
+    </h1>
+    <div class="post-meta"><span title='2025-03-16 12:00:00 +0500 +05'>March 16, 2025</span>
+
+</div>
+  </header> 
+  <div class="post-content"><p>Learn how to use <strong>NotifyIcon</strong> in WinUI 3 apps without third-party libraries.</p>
+<p>WinUI doesn’t natively support <strong>NotifyIcon</strong>, but you can easily fix this using Win32 API. By leveraging Win32, you can add a system tray icon to your WinUI 3 app and handle its functionality seamlessly. This approach keeps your app lightweight and avoids third-party dependencies.</p>
+<p>Essentially, implementing <strong>NotifyIcon</strong> requires just one key function: <a href="https://learn.microsoft.com/en-us/windows/win32/api/shellapi/nf-shellapi-shell_notifyiconw"><code>Shell_NotifyIcon</code></a>. The real challenge lies in handling messages from the icon, such as clicks or context menu actions.</p>
+<p>To get started, you need to define the icon GUID, window message IDs, and the window handle that will process these messages. These elements are essential for setting up and ensuring the proper functioning of <strong>NotifyIcon</strong> in your application.</p>
+<p>The icon GUID is essential for the system to uniquely identify your application&rsquo;s icon. Without a GUID, the icon will be tied to the executable file&rsquo;s path. If you move the program, the system will treat it as a new icon, leading to duplicate entries in the icon settings menu.</p>
+<p>To handle messages, we’ll create an invisible window that will receive notifications from the tray icon. To simplify the implementation, we’ll use the <a href="https://github.com/microsoft/CsWin32"><strong>CsWin32</strong></a> library, which significantly reduces the complexity of working with system APIs.</p>
+<p>The <code>NativeWindow</code> class looks like this:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c#" data-lang="c#"><span style="display:flex;"><span><span style="color:#66d9ef">private</span> <span style="color:#66d9ef">sealed</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">NativeWindow</span>
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Unique window identifier based on the NotifyIcon&#39;s ID</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">readonly</span> <span style="color:#66d9ef">string</span> windowId;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Reference to the NotifyIcon instance that manages the tray icon</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">private</span> NotifyIcon owner;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Delegate for handling window messages</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">private</span> WNDPROC proc;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Constructor: creates an invisible window for message handling</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">unsafe</span> NativeWindow(NotifyIcon owner)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Ensure the provided owner is not null</span>
+</span></span><span style="display:flex;"><span>        ArgumentNullException.ThrowIfNull(owner);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Store the reference to the owner (NotifyIcon)</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">this</span>.owner = owner;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Generate a unique window identifier</span>
+</span></span><span style="display:flex;"><span>        windowId = <span style="color:#e6db74">$&#34;class:{owner.Id}&#34;</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Set OnWindowMessageReceived as the message handler</span>
+</span></span><span style="display:flex;"><span>        proc = OnWindowMessageReceived;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Pin the windowId string in memory for passing to Win32 API</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">fixed</span> (<span style="color:#66d9ef">char</span>* className = windowId)
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e">// Create a WNDCLASSW structure to register the window class</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">var</span> classInfo = <span style="color:#66d9ef">new</span> WNDCLASSW()
+</span></span><span style="display:flex;"><span>            {
+</span></span><span style="display:flex;"><span>                lpfnWndProc = proc, <span style="color:#75715e">// Specify the message handler</span>
+</span></span><span style="display:flex;"><span>                lpszClassName = <span style="color:#66d9ef">new</span> PCWSTR(className), <span style="color:#75715e">// Unique class name</span>
+</span></span><span style="display:flex;"><span>            };
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e">// Register the window class with the system</span>
+</span></span><span style="display:flex;"><span>            PInvoke.RegisterClass(classInfo);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e">// Create an invisible window with the registered class</span>
+</span></span><span style="display:flex;"><span>            Hwnd = PInvoke.CreateWindowEx(
+</span></span><span style="display:flex;"><span>                dwExStyle: <span style="color:#ae81ff">0</span>, <span style="color:#75715e">// Extended window styles (not used)</span>
+</span></span><span style="display:flex;"><span>                lpClassName: windowId, <span style="color:#75715e">// Window class name</span>
+</span></span><span style="display:flex;"><span>                lpWindowName: windowId, <span style="color:#75715e">// Window name (same as class)</span>
+</span></span><span style="display:flex;"><span>                dwStyle: <span style="color:#ae81ff">0</span>, <span style="color:#75715e">// Window styles (not used, window is invisible)</span>
+</span></span><span style="display:flex;"><span>                X: <span style="color:#ae81ff">0</span>, <span style="color:#75715e">// Window X position</span>
+</span></span><span style="display:flex;"><span>                Y: <span style="color:#ae81ff">0</span>, <span style="color:#75715e">// Window Y position</span>
+</span></span><span style="display:flex;"><span>                nWidth: <span style="color:#ae81ff">0</span>, <span style="color:#75715e">// Window width</span>
+</span></span><span style="display:flex;"><span>                nHeight: <span style="color:#ae81ff">0</span>, <span style="color:#75715e">// Window height</span>
+</span></span><span style="display:flex;"><span>                hWndParent: <span style="color:#66d9ef">new</span> HWND(IntPtr.Zero), <span style="color:#75715e">// Parent window (none)</span>
+</span></span><span style="display:flex;"><span>                hMenu: <span style="color:#66d9ef">null</span>, <span style="color:#75715e">// Menu (none)</span>
+</span></span><span style="display:flex;"><span>                hInstance: <span style="color:#66d9ef">null</span>, <span style="color:#75715e">// Application instance (not used)</span>
+</span></span><span style="display:flex;"><span>                lpParam: <span style="color:#66d9ef">null</span>); <span style="color:#75715e">// Additional parameters (not used)</span>
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Destructor: automatically releases resources if Dispose was not called</span>
+</span></span><span style="display:flex;"><span>    ~NativeWindow()
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        Dispose(<span style="color:#66d9ef">false</span>);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Property: returns the handle of the created window</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> HWND Hwnd { <span style="color:#66d9ef">get</span>; <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">set</span>; }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Dispose method: releases window resources</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">void</span> Dispose()
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        Dispose(<span style="color:#66d9ef">true</span>);
+</span></span><span style="display:flex;"><span>        GC.SuppressFinalize(<span style="color:#66d9ef">this</span>); <span style="color:#75715e">// Prevent the destructor from being called</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Internal Dispose method: performs the actual resource cleanup</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">void</span> Dispose(<span style="color:#66d9ef">bool</span> isDisposing)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Check if the window has already been destroyed</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> (Hwnd != HWND.Null)
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e">// Destroy the window</span>
+</span></span><span style="display:flex;"><span>            PInvoke.DestroyWindow(hWnd: Hwnd);
+</span></span><span style="display:flex;"><span>            Hwnd = HWND.Null; <span style="color:#75715e">// Reset the window handle</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e">// Unregister the window class</span>
+</span></span><span style="display:flex;"><span>            PInvoke.UnregisterClass(
+</span></span><span style="display:flex;"><span>                lpClassName: windowId,
+</span></span><span style="display:flex;"><span>                hInstance: <span style="color:#66d9ef">null</span>);
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Window message handler: called when receiving messages from the tray icon</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">private</span> LRESULT OnWindowMessageReceived(HWND hwnd, <span style="color:#66d9ef">uint</span> msg, WPARAM wParam, LPARAM lParam)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Forward the message to NotifyIcon for processing</span>
+</span></span><span style="display:flex;"><span>        owner.ProcessMessage(msg, wParam, lParam);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Call the default window procedure for unhandled messages</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> PInvoke.DefWindowProc(
+</span></span><span style="display:flex;"><span>            hWnd: hwnd,
+</span></span><span style="display:flex;"><span>            Msg: msg,
+</span></span><span style="display:flex;"><span>            wParam: wParam,
+</span></span><span style="display:flex;"><span>            lParam: lParam);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>The <code>Shell_NotifyIcon</code> function works with the <a href="https://learn.microsoft.com/en-us/windows/win32/api/shellapi/ns-shellapi-notifyicondataw"><code>NOTIFYICONDATAW</code></a> structure. This structure contains both the previously mentioned parameters (which typically don’t change) and values that define the appearance of the icon, such as the icon image and the tooltip text:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c#" data-lang="c#"><span style="display:flex;"><span><span style="color:#66d9ef">var</span> data = <span style="color:#66d9ef">new</span> NOTIFYICONDATAW
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Set the size of the structure. This is required for the Shell_NotifyIcon function</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// to correctly interpret the structure, especially across different versions of Windows.</span>
+</span></span><span style="display:flex;"><span>    cbSize = (<span style="color:#66d9ef">uint</span>)<span style="color:#66d9ef">sizeof</span>(NOTIFYICONDATAW),
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Specify the fields in the structure that are being used.</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// NIF_TIP: The szTip (tooltip) field is valid.</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// NIF_MESSAGE: The uCallbackMessage field is valid (used for handling icon events).</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// NIF_GUID: The guidItem field is valid (unique identifier for the icon).</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// NIF_ICON: The hIcon field is valid (icon image).</span>
+</span></span><span style="display:flex;"><span>    uFlags =
+</span></span><span style="display:flex;"><span>        NOTIFY_ICON_DATA_FLAGS.NIF_TIP |
+</span></span><span style="display:flex;"><span>        NOTIFY_ICON_DATA_FLAGS.NIF_MESSAGE |
+</span></span><span style="display:flex;"><span>        NOTIFY_ICON_DATA_FLAGS.NIF_GUID |
+</span></span><span style="display:flex;"><span>        NOTIFY_ICON_DATA_FLAGS.NIF_ICON,
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Set the tooltip text that appears when hovering over the icon.</span>
+</span></span><span style="display:flex;"><span>    szTip = Text,
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Set the icon handle. If no icon is provided, use a null handle (nint.Zero).</span>
+</span></span><span style="display:flex;"><span>    hIcon = <span style="color:#66d9ef">new</span> HICON(Icon?.Handle ?? nint.Zero),
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Set the handle of the window that will receive messages from the tray icon.</span>
+</span></span><span style="display:flex;"><span>    hWnd = window.Hwnd,
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Set the custom message ID that will be sent to the window when the icon is interacted with.</span>
+</span></span><span style="display:flex;"><span>    uCallbackMessage = MESSAGE_ID,
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Set the unique identifier (GUID) for the icon. This ensures the icon is uniquely identified</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// even if the executable path changes.</span>
+</span></span><span style="display:flex;"><span>    guidItem = Id,
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Set additional options in the anonymous union.</span>
+</span></span><span style="display:flex;"><span>    Anonymous =
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Explicitly set the version of the NOTIFYICONDATAW structure.</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Version 5 is the latest and supports modern features like high-resolution icons</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// and extended tooltips.</span>
+</span></span><span style="display:flex;"><span>        uVersion = <span style="color:#ae81ff">5</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>};
+</span></span></code></pre></div><p>With the tray icon, we’ll perform three basic actions: adding, updating, and hiding it. To achieve this, we’ll implement the following methods:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c#" data-lang="c#"><span style="display:flex;"><span><span style="color:#75715e">// Method to show (add) the tray icon in the system tray</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">void</span> Show()
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Retrieve the NOTIFYICONDATAW structure with the current icon settings</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">var</span> data = GetData();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Call Shell_NotifyIcon with the NIM_ADD flag to add the icon to the tray</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">var</span> result = PInvoke.Shell_NotifyIcon(
+</span></span><span style="display:flex;"><span>        dwMessage: NOTIFY_ICON_MESSAGE.NIM_ADD, <span style="color:#75715e">// Add the icon</span>
+</span></span><span style="display:flex;"><span>        lpData: data); <span style="color:#75715e">// Pass the icon data</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// If the operation was successful, update the visibility flag</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> (result)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        IsVisible = <span style="color:#66d9ef">true</span>;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Method to hide (remove) the tray icon from the system tray</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">void</span> Hide()
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Retrieve the NOTIFYICONDATAW structure with the current icon settings</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">var</span> data = GetData();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Call Shell_NotifyIcon with the NIM_DELETE flag to remove the icon from the tray</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">var</span> result = PInvoke.Shell_NotifyIcon(
+</span></span><span style="display:flex;"><span>        dwMessage: NOTIFY_ICON_MESSAGE.NIM_DELETE, <span style="color:#75715e">// Delete the icon</span>
+</span></span><span style="display:flex;"><span>        lpData: data); <span style="color:#75715e">// Pass the icon data</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// If the operation was successful, update the visibility flag</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> (result)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        IsVisible = <span style="color:#66d9ef">false</span>;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Method to update the tray icon&#39;s properties (e.g., icon, tooltip)</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">private</span> <span style="color:#66d9ef">void</span> Update()
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Only update the icon if it is currently visible</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> (IsVisible)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Retrieve the NOTIFYICONDATAW structure with the updated settings</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">var</span> data = GetData();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Call Shell_NotifyIcon with the NIM_MODIFY flag to update the icon</span>
+</span></span><span style="display:flex;"><span>        PInvoke.Shell_NotifyIcon(
+</span></span><span style="display:flex;"><span>            dwMessage: NOTIFY_ICON_MESSAGE.NIM_MODIFY, <span style="color:#75715e">// Modify the icon</span>
+</span></span><span style="display:flex;"><span>            lpData: data); <span style="color:#75715e">// Pass the updated icon data</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>The <code>Update</code> method is private because it is called from the <code>Icon</code> and <code>Text</code> properties to update the tray icon:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c#" data-lang="c#"><span style="display:flex;"><span><span style="color:#75715e">// Property for the tooltip text of the tray icon</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">string</span> Text
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Getter: returns the current text or an empty string if null</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">get</span> =&gt; text ?? <span style="color:#66d9ef">string</span>.Empty;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Setter: updates the text and refreshes the tray icon</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">set</span>
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Check if the new value is the same as the current value</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> (text == <span style="color:#66d9ef">value</span>)
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">return</span>; <span style="color:#75715e">// No changes needed, exit early</span>
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Update the text field with the new value</span>
+</span></span><span style="display:flex;"><span>        text = <span style="color:#66d9ef">value</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Call the Update method to refresh the tray icon with the new text</span>
+</span></span><span style="display:flex;"><span>        Update();
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Property for the icon image of the tray icon</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">public</span> IIconFile? Icon
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Getter: returns the current icon</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">get</span> =&gt; icon;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Setter: updates the icon and refreshes the tray icon</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">set</span>
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Check if the current icon exists and should be disposed</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> (icon != <span style="color:#66d9ef">null</span> &amp;&amp; !keepIconAlive)
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            icon.Dispose(); <span style="color:#75715e">// Release resources of the old icon</span>
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Update the icon field with the new value</span>
+</span></span><span style="display:flex;"><span>        icon = <span style="color:#66d9ef">value</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Call the Update method to refresh the tray icon with the new icon</span>
+</span></span><span style="display:flex;"><span>        Update();
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p><code>IIconFile</code> is an abstraction over an icon that handles loading the icon into memory and releasing it, providing us only its handle.</p>
+<p>The <code>ProcessMessage</code> method handles messages from the tray icon. One of the most important messages to handle is <code>WM_TASKBARCREATED</code>. This message is sent when the taskbar is recreated, such as when Explorer restarts. When this happens, the tray icon disappears, and we need to re-display it by calling the <code>Show</code> method. Without handling this message, the icon would remain invisible after a taskbar restart.</p>
+<p>In the past, the <code>WM_TASKBARCREATED</code> message was also sent when the primary display’s DPI changed, like when connecting an external monitor with a different DPI. This allowed applications to adapt the icon to the new DPI settings. However, in current versions of Windows 11, this functionality has been removed. While it’s unclear if Microsoft will bring it back, it’s something to keep in mind when developing for modern Windows versions.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c#" data-lang="c#"><span style="display:flex;"><span><span style="color:#75715e">// Register a custom window message &#34;TaskbarCreated&#34; and store its unique ID.</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// This message is sent by the system when the taskbar is recreated (e.g., after Explorer restarts).</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">private</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">readonly</span> <span style="color:#66d9ef">uint</span> WM_TASKBARCREATED = PInvoke.RegisterWindowMessage(<span style="color:#e6db74">&#34;TaskbarCreated&#34;</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">private</span> <span style="color:#66d9ef">void</span> ProcessMessage(<span style="color:#66d9ef">uint</span> messageId, WPARAM wParam, LPARAM lParam)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Check if the message is WM_TASKBARCREATED, which indicates the taskbar has been recreated</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> (messageId == WM_TASKBARCREATED)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Re-display the tray icon by calling the Show method</span>
+</span></span><span style="display:flex;"><span>        Show();
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span>; <span style="color:#75715e">// Exit early since no further processing is needed for this message</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// If the message is not the custom MESSAGE_ID (used for tray icon events), ignore it</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> (messageId != MESSAGE_ID)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span>; <span style="color:#75715e">// Exit early</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Handle specific tray icon events based on the value of lParam</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">switch</span> (lParam.Value)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Handle left mouse button click (WM_LBUTTONUP)</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">case</span> WM_LBUTTONUP:
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Handle right mouse button click (WM_RBUTTONUP)</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">case</span> WM_RBUTTONUP:
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e">// Trigger the OnClick event to notify subscribers of a click event</span>
+</span></span><span style="display:flex;"><span>            OnClick(EventArgs.Empty);
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">break</span>;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>This code demonstrates how to use our implementation of <strong>NotifyIcon</strong>. It includes creating a system tray icon, handling icon clicks, and managing its resources. The full example is available at <a href="https://github.com/albertakhmetov/albertakhmetov.com/tree/main/NotifyIcon">GitHub</a>.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c#" data-lang="c#"><span style="display:flex;"><span><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">partial</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">MainWindow</span> : Window
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Declare a NotifyIcon instance to manage the system tray icon</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">private</span> NotifyIcon notifyIcon;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Constructor for the MainWindow class</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> MainWindow()
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Initialize the window components</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">this</span>.InitializeComponent();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Create a new NotifyIcon instance with the following properties:</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// - A unique GUID to identify the icon</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// - Tooltip text (&#34;Click me&#34;)</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// - An icon loaded from a library file (shell32.dll, index 130)</span>
+</span></span><span style="display:flex;"><span>        notifyIcon = <span style="color:#66d9ef">new</span> NotifyIcon()
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            Id = Guid.Parse(<span style="color:#e6db74">&#34;55DE2A49-087C-4331-A76C-6AA2212F3C39&#34;</span>),
+</span></span><span style="display:flex;"><span>            Text = <span style="color:#e6db74">&#34;Click me&#34;</span>,
+</span></span><span style="display:flex;"><span>            Icon = <span style="color:#66d9ef">new</span> LibIcon(<span style="color:#e6db74">&#34;shell32.dll&#34;</span>, <span style="color:#ae81ff">130</span>)
+</span></span><span style="display:flex;"><span>        };
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Subscribe to the Click event of the NotifyIcon</span>
+</span></span><span style="display:flex;"><span>        notifyIcon.Click += NotifyIcon_Click;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Display the tray icon</span>
+</span></span><span style="display:flex;"><span>        notifyIcon.Show();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Ensure the NotifyIcon is properly disposed of when the window is closed</span>
+</span></span><span style="display:flex;"><span>        Closed += (_, _) =&gt; notifyIcon?.Dispose();
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Event handler for the NotifyIcon&#39;s Click event</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">void</span> NotifyIcon_Click(<span style="color:#66d9ef">object?</span> sender, EventArgs e)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Toggle the visibility of the window</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> (AppWindow.IsVisible)
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            AppWindow.Hide(); <span style="color:#75715e">// Hide the window if it&#39;s visible</span>
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">else</span>
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            AppWindow.Show(); <span style="color:#75715e">// Show the window if it&#39;s hidden</span>
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Nested class LibIcon: implements IIconFile to load icons from library files</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">sealed</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">LibIcon</span> : IIconFile
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Handle to the loaded icon</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">private</span> DestroyIconSafeHandle iconHandle;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Constructor: loads an icon from a library file (e.g., shell32.dll)</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">public</span> LibIcon(<span style="color:#66d9ef">string</span> fileName, <span style="color:#66d9ef">uint</span> iconIndex)
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e">// Extract the icon from the specified file and index</span>
+</span></span><span style="display:flex;"><span>            iconHandle = PInvoke.ExtractIcon(fileName, iconIndex);
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Property: returns the handle to the loaded icon</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">public</span> nint Handle =&gt; iconHandle.DangerousGetHandle();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Method: disposes of the icon handle to free resources</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">void</span> Dispose()
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e">// Check if the handle is valid before disposing</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">if</span> (!iconHandle.IsInvalid)
+</span></span><span style="display:flex;"><span>            {
+</span></span><span style="display:flex;"><span>                iconHandle?.Dispose(); <span style="color:#75715e">// Release the icon handle</span>
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div>
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+      <li><a href="https://albertakhmetov.com/tags/c%23/">C#</a></li>
+      <li><a href="https://albertakhmetov.com/tags/.net/">.NET</a></li>
+      <li><a href="https://albertakhmetov.com/tags/winapi/">WinAPI</a></li>
+      <li><a href="https://albertakhmetov.com/tags/winui/">WinUI</a></li>
+    </ul>
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+        <span>&copy; 2025 <a href="https://albertakhmetov.com/">Albert Akhmetov</a></span> · 
+
+    <span>
+        Powered by
+        <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
+        <a href="https://github.com/adityatelange/hugo-PaperMod/" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu')
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = 'copy';
+
+        function copyingDone() {
+            copybutton.innerHTML = 'copied!';
+            setTimeout(() => {
+                copybutton.innerHTML = 'copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+
+        if (container.classList.contains("highlight")) {
+            container.appendChild(copybutton);
+        } else if (container.parentNode.firstChild == container) {
+            
+        } else if (codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName == "TABLE") {
+            
+            codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.appendChild(copybutton);
+        } else {
+            
+            codeblock.parentNode.appendChild(copybutton);
+        }
+    });
+</script>
+</body>
+
+</html>
