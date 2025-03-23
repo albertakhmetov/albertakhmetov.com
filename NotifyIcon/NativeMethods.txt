@@ -1,9 +1,15 @@
-RegisterClass
-UnregisterClass
-CreateWindowEx
-DestroyWindow
-DefWindowProc
+SetForegroundWindow
+GetForegroundWindow
+SetWindowLongPtr
+CallWindowProc
 
 ExtractIcon
 RegisterWindowMessage
 Shell_NotifyIcon
+Shell_NotifyIconGetRect
+
+TRACK_POPUP_MENU_FLAGS
+TrackPopupMenuEx
+CreatePopupMenu
+AppendMenu
+ModifyMenu

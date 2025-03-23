@@ -7,29 +7,44 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using Windows.Foundation.Metadata;
 using Windows.UI.ViewManagement.Core;
 using Windows.Win32;
 using Windows.Win32.Foundation;
 using Windows.Win32.UI.Shell;
 using Windows.Win32.UI.WindowsAndMessaging;
 
-public class NotifyIcon
+class NotifyIcon
 {
     private const int WM_LBUTTONUP = 0x0202;
     private const int WM_RBUTTONUP = 0x0205;
+    private const int WM_CONTEXTMENU = 0x007B;
+
     private const uint MESSAGE_ID = 5800;
     private static readonly uint WM_TASKBARCREATED = PInvoke.RegisterWindowMessage("TaskbarCreated");
-  
-    private NativeWindow window;
+
+    private readonly WindowHelper windowHelper;
+
     private string? text;
     private IIconFile? icon;
 
     private bool keepIconAlive;
 
-    public NotifyIcon(bool keepIconAlive = false)
+    public NotifyIcon(WindowHelper windowHelper, bool keepIconAlive = false)
     {
+        ArgumentNullException.ThrowIfNull(windowHelper);
+
+        this.windowHelper = windowHelper;
         this.keepIconAlive = keepIconAlive;
-        window = new NativeWindow(this);
+
+        ContextMenu = new NotifyContextMenu();
+
+        this.windowHelper.Message += ProcessMessage;
+    }
+
+    ~NotifyIcon()
+    {
+        Dispose(disposing: false);
     }
 
     public bool IsVisible { get; private set; }
@@ -66,7 +81,9 @@ public class NotifyIcon
         }
     }
 
-    public event EventHandler? Click;
+    public NotifyContextMenu ContextMenu { get; }
+
+    public event EventHandler<NotifyIconEventArgs>? Click;
 
     public void Dispose()
     {
@@ -126,7 +143,7 @@ public class NotifyIcon
                 NOTIFY_ICON_DATA_FLAGS.NIF_ICON,
             szTip = Text,
             hIcon = new HICON(Icon?.Handle ?? nint.Zero),
-            hWnd = window.Hwnd,
+            hWnd = windowHelper.Handle,
             uCallbackMessage = MESSAGE_ID,
             guidItem = Id,
             Anonymous =
@@ -138,7 +155,7 @@ public class NotifyIcon
         return data;
     }
 
-    private void OnClick(EventArgs e)
+    private void OnClick(NotifyIconEventArgs e)
     {
         Click?.Invoke(this, e);
     }
@@ -151,11 +168,9 @@ public class NotifyIcon
         {
             icon.Dispose();
         }
-
-        window.Dispose();
     }
 
-    private void ProcessMessage(uint messageId, WPARAM wParam, LPARAM lParam)
+    private void ProcessMessage(uint messageId, uint wParam, int lParam)
     {
         if (messageId == WM_TASKBARCREATED)
         {
@@ -168,92 +183,44 @@ public class NotifyIcon
             return;
         }
 
-        switch (lParam.Value)
+        switch (lParam)
         {
             case WM_LBUTTONUP:
+                OnClick(new NotifyIconEventArgs { Rect = GetIconRectangle() });
+                break;
+
+            case WM_CONTEXTMENU:
             case WM_RBUTTONUP:
-                OnClick(EventArgs.Empty);
+                ShowContextMenu();
                 break;
         }
     }
 
-    private sealed class NativeWindow
+    private void ShowContextMenu()
     {
-        private readonly string windowId;
-        private NotifyIcon owner;
+        var rect = GetIconRectangle();
 
-        private WNDPROC proc;
+        ContextMenu.Show(
+            windowHelper.Handle,
+            (int)(rect.Left + rect.Right) / 2,
+            (int)(rect.Top + rect.Bottom) / 2);
+    }
 
-        public unsafe NativeWindow(NotifyIcon owner)
+    private unsafe Windows.Foundation.Rect GetIconRectangle()
+    {
+        var notifyIcon = new NOTIFYICONIDENTIFIER
         {
-            ArgumentNullException.ThrowIfNull(owner);
+            cbSize = (uint)sizeof(NOTIFYICONIDENTIFIER),
+            hWnd = windowHelper.Handle,
+            guidItem = Id
+        };
 
-            this.owner = owner;
-
-            windowId = $"class:{owner.Id}";
-            proc = OnWindowMessageReceived;
-
-            fixed (char* className = windowId)
-            {
-                var classInfo = new WNDCLASSW()
-                {
-                    lpfnWndProc = proc,
-                    lpszClassName = new PCWSTR(className),
-                };
-
-                PInvoke.RegisterClass(classInfo);
-
-                Hwnd = PInvoke.CreateWindowEx(
-                    dwExStyle: 0,
-                    lpClassName: windowId,
-                    lpWindowName: windowId,
-                    dwStyle: 0,
-                    X: 0,
-                    Y: 0,
-                    nWidth: 0,
-                    nHeight: 0,
-                    hWndParent: new HWND(IntPtr.Zero),
-                    hMenu: null,
-                    hInstance: null,
-                    lpParam: null);
-            }
-        }
-
-        ~NativeWindow()
-        {
-            Dispose(false);
-        }
-
-        public HWND Hwnd { get; private set; }
-
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-        private void Dispose(bool isDisposing)
-        {
-            if (Hwnd != HWND.Null)
-            {
-                PInvoke.DestroyWindow(hWnd: Hwnd);
-                Hwnd = HWND.Null;
-
-                PInvoke.UnregisterClass(
-                    lpClassName: windowId,
-                    hInstance: null);
-            }
-        }
-
-        private LRESULT OnWindowMessageReceived(HWND hwnd, uint msg, WPARAM wParam, LPARAM lParam)
-        {
-            owner.ProcessMessage(msg, wParam, lParam);
-
-            return PInvoke.DefWindowProc(
-                hWnd: hwnd,
-                Msg: msg,
-                wParam: wParam,
-                lParam: lParam);
-        }
+        return PInvoke.Shell_NotifyIconGetRect(notifyIcon, out var rect) != 0
+            ? Windows.Foundation.Rect.Empty
+            : new Windows.Foundation.Rect(
+                rect.left,
+                rect.top,
+                rect.right - rect.left,
+                rect.bottom - rect.top);
     }
 }
