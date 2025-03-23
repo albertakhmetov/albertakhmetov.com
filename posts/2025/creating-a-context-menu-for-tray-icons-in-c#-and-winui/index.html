@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>Creating a Context Menu for Tray Icons in C# and WinUI | Albert Akhmetov</title>
+<meta name="keywords" content="How to add context menu to system tray icon in C#, WinUI tray icon with right-click menu tutorial, Windows API context menu for tray icon example">
+<meta name="description" content="Today, we’ll explore how to add a native context menu to a tray icon.">
+<meta name="author" content="">
+<link rel="canonical" href="https://albertakhmetov.com/posts/2025/creating-a-context-menu-for-tray-icons-in-c%23-and-winui/">
+<link crossorigin="anonymous" href="/assets/css/stylesheet.css" rel="preload stylesheet" as="style">
+<link rel="icon" href="https://albertakhmetov.com/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="https://albertakhmetov.com/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://albertakhmetov.com/favicon-32x32.png">
+<link rel="apple-touch-icon" href="https://albertakhmetov.com/apple-touch-icon.png">
+<link rel="mask-icon" href="https://albertakhmetov.com/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<link rel="alternate" hreflang="en" href="https://albertakhmetov.com/posts/2025/creating-a-context-menu-for-tray-icons-in-c%23-and-winui/">
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --code-block-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-track {
+                background: 0 0;
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-thumb {
+                border-color: var(--theme);
+            }
+        }
+
+    </style>
+</noscript><meta property="og:title" content="Creating a Context Menu for Tray Icons in C# and WinUI" />
+<meta property="og:description" content="Today, we’ll explore how to add a native context menu to a tray icon." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://albertakhmetov.com/posts/2025/creating-a-context-menu-for-tray-icons-in-c%23-and-winui/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2025-03-23T12:00:00+05:00" />
+<meta property="article:modified_time" content="2025-03-23T12:00:00+05:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Creating a Context Menu for Tray Icons in C# and WinUI"/>
+<meta name="twitter:description" content="Today, we’ll explore how to add a native context menu to a tray icon."/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Posts",
+      "item": "https://albertakhmetov.com/posts/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "Creating a Context Menu for Tray Icons in C# and WinUI",
+      "item": "https://albertakhmetov.com/posts/2025/creating-a-context-menu-for-tray-icons-in-c%23-and-winui/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Creating a Context Menu for Tray Icons in C# and WinUI",
+  "name": "Creating a Context Menu for Tray Icons in C# and WinUI",
+  "description": "Today, we’ll explore how to add a native context menu to a tray icon.\n",
+  "keywords": [
+    "How to add context menu to system tray icon in C#", "WinUI tray icon with right-click menu tutorial", "Windows API context menu for tray icon example"
+  ],
+  "articleBody": "Today, we’ll explore how to add a native context menu to a tray icon.\nLast time, we learned how to add an icon to the system tray and handle mouse clicks. Today, we’ll add a native context menu using only Windows API. The advantage of this approach is that the menu will be standard and system-native. This way, we’ll contribute to the fight against Windows UI inconsistency. On the other hand, this system menu hasn’t changed since the early versions of Windows and, to put it mildly, doesn’t look great in modern Windows 11. There are two options here: either hope that future updates will improve the menu (and our menu will automatically look better); or create a custom menu (which we’ll tackle next time).\nWe’ll start by making significant changes to the previous code. Remember the NativeWindow class that was responsible for intercepting window messages? Well, we’ll replace it with the application’s main window. Experiments show that the fewest issues arise when we display the context menu from the main window rather than a specially created hidden one. To avoid spreading functionality across different places, we’ll fully tie it to the main window.\nTo achieve this, we’ll create a WindowsHelper class that can intercept window messages for a given window and retrieve its handle:\ninternal class WindowHelper : IDisposable { private readonly Window window; // Reference to the main window private readonly WNDPROC windowProc, nativeWindowProc; // Delegates for custom and original window procedures public WindowHelper(Window window) { ArgumentNullException.ThrowIfNull(window); // Ensure the window is not null this.window = window; // Create a delegate for the custom window procedure windowProc = new WNDPROC(WindowProc); // Replace the window's default procedure with our custom one var proc = PInvoke.SetWindowLongPtr( hWnd: new HWND(WinRT.Interop.WindowNative.GetWindowHandle(this.window)), // Get the window handle nIndex: WINDOW_LONG_PTR_INDEX.GWL_WNDPROC, // Specify that we're replacing the window procedure dwNewLong: Marshal.GetFunctionPointerForDelegate(windowProc)); // Convert the delegate to a function pointer // Store the original window procedure for later use nativeWindowProc = Marshal.GetDelegateForFunctionPointer(proc); } // Destructor to ensure resources are cleaned up ~WindowHelper() { Dispose(disposing: false); } // Property to get the window handle public HWND Handle =\u003e (HWND)WinRT.Interop.WindowNative.GetWindowHandle(window); // Flag to track if the object has been disposed public bool IsDisposed { get; private set; } = false; // Event to notify subscribers about window messages public event Action\u003cuint, uint, int\u003e? Message; // Dispose method to clean up resources public void Dispose() { Dispose(disposing: true); GC.SuppressFinalize(this); // Prevent the destructor from being called } // Helper method to handle disposal private void Dispose(bool disposing) { if (!IsDisposed) { // Restore the original window procedure PInvoke.SetWindowLongPtr( hWnd: new HWND(WinRT.Interop.WindowNative.GetWindowHandle(this.window)), nIndex: WINDOW_LONG_PTR_INDEX.GWL_WNDPROC, dwNewLong: Marshal.GetFunctionPointerForDelegate(nativeWindowProc)); IsDisposed = true; // Mark the object as disposed } } // Custom window procedure to handle messages private LRESULT WindowProc(HWND hWnd, uint msg, WPARAM wParam, LPARAM lParam) { // Notify subscribers about the received message Message?.Invoke(msg, (uint)wParam.Value, (int)lParam.Value); // Call the original window procedure to ensure default behavior return PInvoke.CallWindowProc(nativeWindowProc, hWnd, msg, wParam, lParam); } } We will pass this class to NotifyIcon:\npublic NotifyIcon(WindowHelper windowHelper, bool keepIconAlive = false) { // Ensure the provided WindowHelper instance is not null ArgumentNullException.ThrowIfNull(windowHelper); // Store the WindowHelper instance for later use this.windowHelper = windowHelper; // .. skipped .. (other initialization code) // Subscribe to the Message event of WindowHelper to handle window messages this.windowHelper.Message += ProcessMessage; } In all places where a window handle is needed, we will use windowHelper.Handle.\nNow, let’s move on to creating the context menu itself. Right away, I’ll say that the code is heavily simplified, and, of course, context menus have many more capabilities. Here, it’s important for us to understand the essence. So, for the context menu, we’ll add two classes: NotifyContextMenu and NotifyContextMenuItem. The first is responsible for creating and managing the context menu, while the second represents a menu item. For simplicity, we’ll implement only the text and an enabled/disabled flag.\nNotifyContextMenuItem is an abstract class that implements the interface for a menu item:\n// Abstract class representing a menu item in the context menu abstract class NotifyContextMenuItem { // Abstract property to get or set the text of the menu item public abstract string Text { get; set; } // Abstract property to get or set whether the menu item is enabled or disabled public abstract bool IsEnabled { get; set; } // Event to handle click actions on the menu item public EventHandler? Click; } We will implement this functionality later in a nested class to allow tighter integration with the menu:\nclass NotifyContextMenu { sealed class MenuItem : NotifyContextMenuItem { // Static counter to generate unique IDs for menu items private static uint idCount = 100; // Reference to the parent context menu private NotifyContextMenu menu; // Field to store the text of the menu item private string text = string.Empty; // Field to store the enabled state of the menu item private bool isEnabled = true; // Constructor to initialize the menu item with a reference to the parent menu public MenuItem(NotifyContextMenu menu) { // Ensure the parent menu is not null ArgumentNullException.ThrowIfNull(menu); this.menu = menu; // Assign a unique ID to the menu item Id = ++idCount; } // Property to get the unique ID of the menu item public uint Id { get; } // Override for the Text property from the base class public override string Text { get =\u003e text; // Return the current text set { // If the text hasn't changed, do nothing if (text == value) { return; } // Update the text (use an empty string if null is provided) text = value ?? string.Empty; // Notify the parent menu to update this item menu.UpdateMenuItem(this); } } // Override for the IsEnabled property from the base class public override bool IsEnabled { get =\u003e isEnabled; // Return the current enabled state set { // If the enabled state hasn't changed, do nothing if (isEnabled == value) { return; } // Update the enabled state isEnabled = value; // Notify the parent menu to update this item menu.UpdateMenuItem(this); } } // Method to programmatically trigger a click event on the menu item public void PerformClick() { // Invoke the Click event if there are subscribers Click?.Invoke(this, EventArgs.Empty); } } } Let’s take a closer look at the NotifyContextMenu class. The context menu is wrapped in a DestroyMenuSafeHandle to ensure that resources are properly released when the object is destroyed:\nprivate DestroyMenuSafeHandle handle; public NotifyContextMenu() { handle = PInvoke.CreatePopupMenu_SafeHandle(); } The AddMenuItem method creates a menu item with the specified text and returns the created NotifyContextMenuItem instance for further customization:\npublic NotifyContextMenuItem AddMenuItem(string text) { // Create a new MenuItem instance, passing the current context menu as its parent var item = new MenuItem(this) { Text = text // Set the text of the menu item }; // Initialize flags for the menu item (default is MF_STRING for text items) var flags = MENU_ITEM_FLAGS.MF_STRING; // Check if the text is \"--\", which indicates a separator if (text == \"--\") { // Add the MF_SEPARATOR flag to create a separator instead of a text item flags |= MENU_ITEM_FLAGS.MF_SEPARATOR; } // Add the menu item to the native menu using the Windows API PInvoke.AppendMenu(handle, flags, item.Id, item.Text); // Add the item to the internal list of menu items for tracking items.Add(item); // Return the created menu item return item; } The UpdateMenuItem method updates a menu item. It is declared as private because it is called from the nested MenuItem class:\nprivate void UpdateMenuItem(MenuItem item) { // Initialize flags for the menu item (default is MF_STRING for text items) var flags = MENU_ITEM_FLAGS.MF_STRING; // Check if the item's text is \"--\", which indicates a separator if (item.Text == \"--\") { // Add the MF_SEPARATOR flag to treat the item as a separator flags |= MENU_ITEM_FLAGS.MF_SEPARATOR; } // Check if the item is disabled if (item.IsEnabled == false) { // Add the MF_DISABLED flag to disable the menu item flags |= MENU_ITEM_FLAGS.MF_DISABLED; } // Update the native menu item using the Windows API PInvoke.ModifyMenu( hMenu: handle, // Handle to the native menu uPosition: item.Id, // ID of the menu item to update uFlags: flags, // Combined flags for the item's state (e.g., enabled, disabled, separator) uIDNewItem: item.Id, // ID of the updated item lpNewItem: item.Text // New text for the menu item ); } When displaying the context menu, it’s important to handle input focus correctly: before showing the menu, the main application window must be activated, and after the menu is closed, focus should be returned to the previously active window. This is necessary to ensure that the user can invoke the menu and navigate its items using the keyboard (without relying on the mouse):\npublic void Show(HWND hWnd, int x, int y) { // Get the handle of the currently active window to restore focus later var activeWindow = PInvoke.GetForegroundWindow(); // Set the focus to the specified window (hWnd) to ensure keyboard input works PInvoke.SetForegroundWindow(hWnd); try { // Display the context menu and wait for a command to be selected var command = PInvoke.TrackPopupMenuEx( handle, // Handle to the native menu (uint)(TRACK_POPUP_MENU_FLAGS.TPM_RETURNCMD | TRACK_POPUP_MENU_FLAGS.TPM_NONOTIFY), // Flags: return the selected command ID and do not send notifications x, // X-coordinate of the menu position y, // Y-coordinate of the menu position hWnd, // Handle to the window owning the menu null // Optional rectangle to exclude (not used here) ); // If no command was selected (command == 0), exit the method if (command == 0) { return; } // Find the menu item corresponding to the selected command ID var item = items.FirstOrDefault(x =\u003e x.Id == command.Value); // If the item is found, trigger its click event item?.PerformClick(); } finally { // Restore focus to the previously active window, even if an exception occurs PInvoke.SetForegroundWindow(activeWindow); } } The menu is invoked from the NotifyIcon class. It can be opened either by right-clicking the icon or by using the “context menu” key on the keyboard. To ensure a consistent approach, we will use the coordinates of the icon’s rectangle and display the menu at its center:\nprivate void ProcessMessage(uint messageId, uint wParam, int lParam) { // Handle the WM_TASKBARCREATED message, which indicates the taskbar has been recreated if (messageId == WM_TASKBARCREATED) { Show(); // Re-show the tray icon if the taskbar is recreated return; } // Ignore messages that are not intended for this tray icon if (messageId != MESSAGE_ID) { return; } // Handle specific mouse or context menu events switch (lParam) { case WM_LBUTTONUP: // Left mouse button release event OnClick(new NotifyIconEventArgs { Rect = GetIconRectangle() }); // Trigger the Click event break; case WM_CONTEXTMENU: // Context menu key event case WM_RBUTTONUP: // Right mouse button release event ShowContextMenu(); // Display the context menu break; } } private void ShowContextMenu() { // Get the rectangle of the tray icon var rect = GetIconRectangle(); // Show the context menu at the center of the icon's rectangle ContextMenu.Show( windowHelper.Handle, // Handle to the window owning the menu (int)(rect.Left + rect.Right) / 2, // X-coordinate: center of the icon (int)(rect.Top + rect.Bottom) / 2); // Y-coordinate: center of the icon } private unsafe Windows.Foundation.Rect GetIconRectangle() { // Create a NOTIFYICONIDENTIFIER structure to identify the tray icon var notifyIcon = new NOTIFYICONIDENTIFIER { cbSize = (uint)sizeof(NOTIFYICONIDENTIFIER), // Size of the structure hWnd = windowHelper.Handle, // Handle to the window associated with the icon guidItem = Id // Unique identifier for the icon }; // Retrieve the rectangle of the tray icon using the Shell_NotifyIconGetRect function return PInvoke.Shell_NotifyIconGetRect(notifyIcon, out var rect) != 0 ? Windows.Foundation.Rect.Empty // Return an empty rectangle if the function fails : new Windows.Foundation.Rect( rect.left, // X-coordinate of the top-left corner rect.top, // Y-coordinate of the top-left corner rect.right - rect.left, // Width of the rectangle rect.bottom - rect.top); // Height of the rectangle } The full example is available at GitHub.\n",
+  "wordCount" : "1973",
+  "inLanguage": "en",
+  "datePublished": "2025-03-23T12:00:00+05:00",
+  "dateModified": "2025-03-23T12:00:00+05:00",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://albertakhmetov.com/posts/2025/creating-a-context-menu-for-tray-icons-in-c%23-and-winui/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Albert Akhmetov",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://albertakhmetov.com/favicon.ico"
+    }
+  }
+}
+</script>
+</head>
+
+<body class="" id="top">
+<script>
+    if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark');
+    }
+
+</script>
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="https://albertakhmetov.com/" accesskey="h" title="Albert Akhmetov (Alt + H)">Albert Akhmetov</a>
+            <div class="logo-switches">
+            </div>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="https://albertakhmetov.com/posts/introduce" title="about me">
+                    <span>about me</span>
+                </a>
+            </li>
+            <li>
+                <a href="https://albertakhmetov.com/tags" title="tags">
+                    <span>tags</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    
+    <h1 class="post-title entry-hint-parent">
+      Creating a Context Menu for Tray Icons in C# and WinUI
+    </h1>
+    <div class="post-meta"><span title='2025-03-23 12:00:00 +0500 +05'>March 23, 2025</span>
+
+</div>
+  </header> 
+  <div class="post-content"><p>Today, we’ll explore how to add a native context menu to a tray icon.</p>
+<p>Last time, we learned how to add an icon to the system tray and handle mouse clicks. Today, we’ll add a native context menu using only Windows API. The advantage of this approach is that the menu will be standard and system-native. This way, we’ll contribute to the fight against Windows UI inconsistency. On the other hand, this system menu hasn’t changed since the early versions of Windows and, to put it mildly, doesn’t look great in modern Windows 11. There are two options here: either hope that future updates will improve the menu (and our menu will automatically look better); or create a custom menu (which we’ll tackle next time).</p>
+<p>We’ll start by making significant changes to the previous code. Remember the <code>NativeWindow</code> class that was responsible for intercepting window messages? Well, we’ll replace it with the application’s main window. Experiments show that the fewest issues arise when we display the context menu from the main window rather than a specially created hidden one. To avoid spreading functionality across different places, we’ll fully tie it to the main window.</p>
+<p>To achieve this, we’ll create a <code>WindowsHelper</code> class that can intercept window messages for a given window and retrieve its handle:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C#" data-lang="C#"><span style="display:flex;"><span><span style="color:#66d9ef">internal</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">WindowHelper</span> : IDisposable
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">readonly</span> Window window; <span style="color:#75715e">// Reference to the main window</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">readonly</span> WNDPROC windowProc, nativeWindowProc; <span style="color:#75715e">// Delegates for custom and original window procedures</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> WindowHelper(Window window)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        ArgumentNullException.ThrowIfNull(window); <span style="color:#75715e">// Ensure the window is not null</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">this</span>.window = window;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Create a delegate for the custom window procedure</span>
+</span></span><span style="display:flex;"><span>        windowProc = <span style="color:#66d9ef">new</span> WNDPROC(WindowProc);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Replace the window&#39;s default procedure with our custom one</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">var</span> proc = PInvoke.SetWindowLongPtr(
+</span></span><span style="display:flex;"><span>            hWnd: <span style="color:#66d9ef">new</span> HWND(WinRT.Interop.WindowNative.GetWindowHandle(<span style="color:#66d9ef">this</span>.window)), <span style="color:#75715e">// Get the window handle</span>
+</span></span><span style="display:flex;"><span>            nIndex: WINDOW_LONG_PTR_INDEX.GWL_WNDPROC, <span style="color:#75715e">// Specify that we&#39;re replacing the window procedure</span>
+</span></span><span style="display:flex;"><span>            dwNewLong: Marshal.GetFunctionPointerForDelegate(windowProc)); <span style="color:#75715e">// Convert the delegate to a function pointer</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Store the original window procedure for later use</span>
+</span></span><span style="display:flex;"><span>        nativeWindowProc = Marshal.GetDelegateForFunctionPointer&lt;WNDPROC&gt;(proc);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Destructor to ensure resources are cleaned up</span>
+</span></span><span style="display:flex;"><span>    ~WindowHelper()
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        Dispose(disposing: <span style="color:#66d9ef">false</span>);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Property to get the window handle</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> HWND Handle =&gt; (HWND)WinRT.Interop.WindowNative.GetWindowHandle(window);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Flag to track if the object has been disposed</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">bool</span> IsDisposed { <span style="color:#66d9ef">get</span>; <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">set</span>; } = <span style="color:#66d9ef">false</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Event to notify subscribers about window messages</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">event</span> Action&lt;<span style="color:#66d9ef">uint</span>, <span style="color:#66d9ef">uint</span>, <span style="color:#66d9ef">int</span>&gt;? Message;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Dispose method to clean up resources</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">void</span> Dispose()
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        Dispose(disposing: <span style="color:#66d9ef">true</span>);
+</span></span><span style="display:flex;"><span>        GC.SuppressFinalize(<span style="color:#66d9ef">this</span>); <span style="color:#75715e">// Prevent the destructor from being called</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Helper method to handle disposal</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">void</span> Dispose(<span style="color:#66d9ef">bool</span> disposing)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> (!IsDisposed)
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e">// Restore the original window procedure</span>
+</span></span><span style="display:flex;"><span>            PInvoke.SetWindowLongPtr(
+</span></span><span style="display:flex;"><span>                    hWnd: <span style="color:#66d9ef">new</span> HWND(WinRT.Interop.WindowNative.GetWindowHandle(<span style="color:#66d9ef">this</span>.window)),
+</span></span><span style="display:flex;"><span>                    nIndex: WINDOW_LONG_PTR_INDEX.GWL_WNDPROC,
+</span></span><span style="display:flex;"><span>                    dwNewLong: Marshal.GetFunctionPointerForDelegate(nativeWindowProc));
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            IsDisposed = <span style="color:#66d9ef">true</span>; <span style="color:#75715e">// Mark the object as disposed</span>
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Custom window procedure to handle messages</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">private</span> LRESULT WindowProc(HWND hWnd, <span style="color:#66d9ef">uint</span> msg, WPARAM wParam, LPARAM lParam)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Notify subscribers about the received message</span>
+</span></span><span style="display:flex;"><span>        Message?.Invoke(msg, (<span style="color:#66d9ef">uint</span>)wParam.Value, (<span style="color:#66d9ef">int</span>)lParam.Value);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Call the original window procedure to ensure default behavior</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> PInvoke.CallWindowProc(nativeWindowProc, hWnd, msg, wParam, lParam);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>We will pass this class to <code>NotifyIcon</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C#" data-lang="C#"><span style="display:flex;"><span><span style="color:#66d9ef">public</span> NotifyIcon(WindowHelper windowHelper, <span style="color:#66d9ef">bool</span> keepIconAlive = <span style="color:#66d9ef">false</span>)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Ensure the provided WindowHelper instance is not null</span>
+</span></span><span style="display:flex;"><span>    ArgumentNullException.ThrowIfNull(windowHelper);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Store the WindowHelper instance for later use</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">this</span>.windowHelper = windowHelper;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// .. skipped .. (other initialization code)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Subscribe to the Message event of WindowHelper to handle window messages</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">this</span>.windowHelper.Message += ProcessMessage;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>In all places where a window handle is needed, we will use <code>windowHelper.Handle</code>.</p>
+<p>Now, let’s move on to creating the context menu itself. Right away, I’ll say that the code is heavily simplified, and, of course, context menus have many more capabilities. Here, it’s important for us to understand the essence. So, for the context menu, we’ll add two classes: <code>NotifyContextMenu</code> and <code>NotifyContextMenuItem</code>. The first is responsible for creating and managing the context menu, while the second represents a menu item. For simplicity, we’ll implement only the text and an enabled/disabled flag.</p>
+<p><code>NotifyContextMenuItem</code> is an abstract class that implements the interface for a menu item:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C#" data-lang="C#"><span style="display:flex;"><span><span style="color:#75715e">// Abstract class representing a menu item in the context menu</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">abstract</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">NotifyContextMenuItem</span>
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Abstract property to get or set the text of the menu item</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">abstract</span> <span style="color:#66d9ef">string</span> Text { <span style="color:#66d9ef">get</span>; <span style="color:#66d9ef">set</span>; }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Abstract property to get or set whether the menu item is enabled or disabled</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">abstract</span> <span style="color:#66d9ef">bool</span> IsEnabled { <span style="color:#66d9ef">get</span>; <span style="color:#66d9ef">set</span>; }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Event to handle click actions on the menu item</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> EventHandler&lt;EventArgs&gt;? Click;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>We will implement this functionality later in a nested class to allow tighter integration with the menu:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C#" data-lang="C#"><span style="display:flex;"><span><span style="color:#66d9ef">class</span> <span style="color:#a6e22e">NotifyContextMenu</span> {
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">sealed</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">MenuItem</span> : NotifyContextMenuItem
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Static counter to generate unique IDs for menu items</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">uint</span> idCount = <span style="color:#ae81ff">100</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Reference to the parent context menu</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">private</span> NotifyContextMenu menu;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Field to store the text of the menu item</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">string</span> text = <span style="color:#66d9ef">string</span>.Empty;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Field to store the enabled state of the menu item</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">bool</span> isEnabled = <span style="color:#66d9ef">true</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Constructor to initialize the menu item with a reference to the parent menu</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> MenuItem(NotifyContextMenu menu)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Ensure the parent menu is not null</span>
+</span></span><span style="display:flex;"><span>        ArgumentNullException.ThrowIfNull(menu);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">this</span>.menu = menu;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Assign a unique ID to the menu item</span>
+</span></span><span style="display:flex;"><span>        Id = ++idCount;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Property to get the unique ID of the menu item</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">uint</span> Id { <span style="color:#66d9ef">get</span>; }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Override for the Text property from the base class</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">override</span> <span style="color:#66d9ef">string</span> Text
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">get</span> =&gt; text; <span style="color:#75715e">// Return the current text</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">set</span>
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e">// If the text hasn&#39;t changed, do nothing</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">if</span> (text == <span style="color:#66d9ef">value</span>)
+</span></span><span style="display:flex;"><span>            {
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">return</span>;
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e">// Update the text (use an empty string if null is provided)</span>
+</span></span><span style="display:flex;"><span>            text = <span style="color:#66d9ef">value</span> ?? <span style="color:#66d9ef">string</span>.Empty;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e">// Notify the parent menu to update this item</span>
+</span></span><span style="display:flex;"><span>            menu.UpdateMenuItem(<span style="color:#66d9ef">this</span>);
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Override for the IsEnabled property from the base class</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">override</span> <span style="color:#66d9ef">bool</span> IsEnabled
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">get</span> =&gt; isEnabled; <span style="color:#75715e">// Return the current enabled state</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">set</span>
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e">// If the enabled state hasn&#39;t changed, do nothing</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">if</span> (isEnabled == <span style="color:#66d9ef">value</span>)
+</span></span><span style="display:flex;"><span>            {
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">return</span>;
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e">// Update the enabled state</span>
+</span></span><span style="display:flex;"><span>            isEnabled = <span style="color:#66d9ef">value</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e">// Notify the parent menu to update this item</span>
+</span></span><span style="display:flex;"><span>            menu.UpdateMenuItem(<span style="color:#66d9ef">this</span>);
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Method to programmatically trigger a click event on the menu item</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">void</span> PerformClick()
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Invoke the Click event if there are subscribers</span>
+</span></span><span style="display:flex;"><span>        Click?.Invoke(<span style="color:#66d9ef">this</span>, EventArgs.Empty);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>Let’s take a closer look at the <code>NotifyContextMenu</code> class. The context menu is wrapped in a <code>DestroyMenuSafeHandle</code> to ensure that resources are properly released when the object is destroyed:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C#" data-lang="C#"><span style="display:flex;"><span><span style="color:#66d9ef">private</span> DestroyMenuSafeHandle handle;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">public</span> NotifyContextMenu()
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    handle = PInvoke.CreatePopupMenu_SafeHandle();
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>The <code>AddMenuItem</code> method creates a menu item with the specified text and returns the created <code>NotifyContextMenuItem</code> instance for further customization:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C#" data-lang="C#"><span style="display:flex;"><span><span style="color:#66d9ef">public</span> NotifyContextMenuItem AddMenuItem(<span style="color:#66d9ef">string</span> text)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Create a new MenuItem instance, passing the current context menu as its parent</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">var</span> item = <span style="color:#66d9ef">new</span> MenuItem(<span style="color:#66d9ef">this</span>)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        Text = text <span style="color:#75715e">// Set the text of the menu item</span>
+</span></span><span style="display:flex;"><span>    };
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Initialize flags for the menu item (default is MF_STRING for text items)</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">var</span> flags = MENU_ITEM_FLAGS.MF_STRING;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Check if the text is &#34;--&#34;, which indicates a separator</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> (text == <span style="color:#e6db74">&#34;--&#34;</span>)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Add the MF_SEPARATOR flag to create a separator instead of a text item</span>
+</span></span><span style="display:flex;"><span>        flags |= MENU_ITEM_FLAGS.MF_SEPARATOR;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Add the menu item to the native menu using the Windows API</span>
+</span></span><span style="display:flex;"><span>    PInvoke.AppendMenu(handle, flags, item.Id, item.Text);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Add the item to the internal list of menu items for tracking</span>
+</span></span><span style="display:flex;"><span>    items.Add(item);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Return the created menu item</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> item;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>The <code>UpdateMenuItem</code> method updates a menu item. It is declared as private because it is called from the nested <code>MenuItem</code> class:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C#" data-lang="C#"><span style="display:flex;"><span><span style="color:#66d9ef">private</span> <span style="color:#66d9ef">void</span> UpdateMenuItem(MenuItem item)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Initialize flags for the menu item (default is MF_STRING for text items)</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">var</span> flags = MENU_ITEM_FLAGS.MF_STRING;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Check if the item&#39;s text is &#34;--&#34;, which indicates a separator</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> (item.Text == <span style="color:#e6db74">&#34;--&#34;</span>)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Add the MF_SEPARATOR flag to treat the item as a separator</span>
+</span></span><span style="display:flex;"><span>        flags |= MENU_ITEM_FLAGS.MF_SEPARATOR;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Check if the item is disabled</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> (item.IsEnabled == <span style="color:#66d9ef">false</span>)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Add the MF_DISABLED flag to disable the menu item</span>
+</span></span><span style="display:flex;"><span>        flags |= MENU_ITEM_FLAGS.MF_DISABLED;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Update the native menu item using the Windows API</span>
+</span></span><span style="display:flex;"><span>    PInvoke.ModifyMenu(
+</span></span><span style="display:flex;"><span>        hMenu: handle, <span style="color:#75715e">// Handle to the native menu</span>
+</span></span><span style="display:flex;"><span>        uPosition: item.Id, <span style="color:#75715e">// ID of the menu item to update</span>
+</span></span><span style="display:flex;"><span>        uFlags: flags, <span style="color:#75715e">// Combined flags for the item&#39;s state (e.g., enabled, disabled, separator)</span>
+</span></span><span style="display:flex;"><span>        uIDNewItem: item.Id, <span style="color:#75715e">// ID of the updated item</span>
+</span></span><span style="display:flex;"><span>        lpNewItem: item.Text <span style="color:#75715e">// New text for the menu item</span>
+</span></span><span style="display:flex;"><span>    );
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>When displaying the context menu, it’s important to handle input focus correctly: before showing the menu, the main application window must be activated, and after the menu is closed, focus should be returned to the previously active window. This is necessary to ensure that the user can invoke the menu and navigate its items using the keyboard (without relying on the mouse):</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C#" data-lang="C#"><span style="display:flex;"><span><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">void</span> Show(HWND hWnd, <span style="color:#66d9ef">int</span> x, <span style="color:#66d9ef">int</span> y)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Get the handle of the currently active window to restore focus later</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">var</span> activeWindow = PInvoke.GetForegroundWindow();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Set the focus to the specified window (hWnd) to ensure keyboard input works</span>
+</span></span><span style="display:flex;"><span>    PInvoke.SetForegroundWindow(hWnd);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">try</span>
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Display the context menu and wait for a command to be selected</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">var</span> command = PInvoke.TrackPopupMenuEx(
+</span></span><span style="display:flex;"><span>            handle, <span style="color:#75715e">// Handle to the native menu</span>
+</span></span><span style="display:flex;"><span>            (<span style="color:#66d9ef">uint</span>)(TRACK_POPUP_MENU_FLAGS.TPM_RETURNCMD | TRACK_POPUP_MENU_FLAGS.TPM_NONOTIFY), <span style="color:#75715e">// Flags: return the selected command ID and do not send notifications</span>
+</span></span><span style="display:flex;"><span>            x, <span style="color:#75715e">// X-coordinate of the menu position</span>
+</span></span><span style="display:flex;"><span>            y, <span style="color:#75715e">// Y-coordinate of the menu position</span>
+</span></span><span style="display:flex;"><span>            hWnd, <span style="color:#75715e">// Handle to the window owning the menu</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">null</span> <span style="color:#75715e">// Optional rectangle to exclude (not used here)</span>
+</span></span><span style="display:flex;"><span>        );
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// If no command was selected (command == 0), exit the method</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> (command == <span style="color:#ae81ff">0</span>)
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">return</span>;
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Find the menu item corresponding to the selected command ID</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">var</span> item = items.FirstOrDefault(x =&gt; x.Id == command.Value);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// If the item is found, trigger its click event</span>
+</span></span><span style="display:flex;"><span>        item?.PerformClick();
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">finally</span>
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Restore focus to the previously active window, even if an exception occurs</span>
+</span></span><span style="display:flex;"><span>        PInvoke.SetForegroundWindow(activeWindow);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>The menu is invoked from the NotifyIcon class. It can be opened either by right-clicking the icon or by using the &ldquo;context menu&rdquo; key on the keyboard. To ensure a consistent approach, we will use the coordinates of the icon&rsquo;s rectangle and display the menu at its center:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C#" data-lang="C#"><span style="display:flex;"><span><span style="color:#66d9ef">private</span> <span style="color:#66d9ef">void</span> ProcessMessage(<span style="color:#66d9ef">uint</span> messageId, <span style="color:#66d9ef">uint</span> wParam, <span style="color:#66d9ef">int</span> lParam)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Handle the WM_TASKBARCREATED message, which indicates the taskbar has been recreated</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> (messageId == WM_TASKBARCREATED)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        Show(); <span style="color:#75715e">// Re-show the tray icon if the taskbar is recreated</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span>;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Ignore messages that are not intended for this tray icon</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> (messageId != MESSAGE_ID)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span>;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Handle specific mouse or context menu events</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">switch</span> (lParam)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">case</span> WM_LBUTTONUP: <span style="color:#75715e">// Left mouse button release event</span>
+</span></span><span style="display:flex;"><span>            OnClick(<span style="color:#66d9ef">new</span> NotifyIconEventArgs { Rect = GetIconRectangle() }); <span style="color:#75715e">// Trigger the Click event</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">break</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">case</span> WM_CONTEXTMENU: <span style="color:#75715e">// Context menu key event</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">case</span> WM_RBUTTONUP: <span style="color:#75715e">// Right mouse button release event</span>
+</span></span><span style="display:flex;"><span>            ShowContextMenu(); <span style="color:#75715e">// Display the context menu</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">break</span>;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">private</span> <span style="color:#66d9ef">void</span> ShowContextMenu()
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Get the rectangle of the tray icon</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">var</span> rect = GetIconRectangle();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Show the context menu at the center of the icon&#39;s rectangle</span>
+</span></span><span style="display:flex;"><span>    ContextMenu.Show(
+</span></span><span style="display:flex;"><span>        windowHelper.Handle, <span style="color:#75715e">// Handle to the window owning the menu</span>
+</span></span><span style="display:flex;"><span>        (<span style="color:#66d9ef">int</span>)(rect.Left + rect.Right) / <span style="color:#ae81ff">2</span>, <span style="color:#75715e">// X-coordinate: center of the icon</span>
+</span></span><span style="display:flex;"><span>        (<span style="color:#66d9ef">int</span>)(rect.Top + rect.Bottom) / <span style="color:#ae81ff">2</span>); <span style="color:#75715e">// Y-coordinate: center of the icon</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">private</span> <span style="color:#66d9ef">unsafe</span> Windows.Foundation.Rect GetIconRectangle()
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Create a NOTIFYICONIDENTIFIER structure to identify the tray icon</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">var</span> notifyIcon = <span style="color:#66d9ef">new</span> NOTIFYICONIDENTIFIER
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        cbSize = (<span style="color:#66d9ef">uint</span>)<span style="color:#66d9ef">sizeof</span>(NOTIFYICONIDENTIFIER), <span style="color:#75715e">// Size of the structure</span>
+</span></span><span style="display:flex;"><span>        hWnd = windowHelper.Handle, <span style="color:#75715e">// Handle to the window associated with the icon</span>
+</span></span><span style="display:flex;"><span>        guidItem = Id <span style="color:#75715e">// Unique identifier for the icon</span>
+</span></span><span style="display:flex;"><span>    };
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Retrieve the rectangle of the tray icon using the Shell_NotifyIconGetRect function</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> PInvoke.Shell_NotifyIconGetRect(notifyIcon, <span style="color:#66d9ef">out</span> <span style="color:#66d9ef">var</span> rect) != <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>        ? Windows.Foundation.Rect.Empty <span style="color:#75715e">// Return an empty rectangle if the function fails</span>
+</span></span><span style="display:flex;"><span>        : <span style="color:#66d9ef">new</span> Windows.Foundation.Rect(
+</span></span><span style="display:flex;"><span>            rect.left, <span style="color:#75715e">// X-coordinate of the top-left corner</span>
+</span></span><span style="display:flex;"><span>            rect.top, <span style="color:#75715e">// Y-coordinate of the top-left corner</span>
+</span></span><span style="display:flex;"><span>            rect.right - rect.left, <span style="color:#75715e">// Width of the rectangle</span>
+</span></span><span style="display:flex;"><span>            rect.bottom - rect.top); <span style="color:#75715e">// Height of the rectangle</span>
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>The full example is available at <a href="https://github.com/albertakhmetov/albertakhmetov.com/tree/main/NotifyIcon">GitHub</a>.</p>
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+      <li><a href="https://albertakhmetov.com/tags/c%23/">C#</a></li>
+      <li><a href="https://albertakhmetov.com/tags/.net/">.NET</a></li>
+      <li><a href="https://albertakhmetov.com/tags/winapi/">WinAPI</a></li>
+      <li><a href="https://albertakhmetov.com/tags/winui/">WinUI</a></li>
+    </ul>
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+        <span>&copy; 2025 <a href="https://albertakhmetov.com/">Albert Akhmetov</a></span> · 
+
+    <span>
+        Powered by
+        <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
+        <a href="https://github.com/adityatelange/hugo-PaperMod/" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu')
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = 'copy';
+
+        function copyingDone() {
+            copybutton.innerHTML = 'copied!';
+            setTimeout(() => {
+                copybutton.innerHTML = 'copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+
+        if (container.classList.contains("highlight")) {
+            container.appendChild(copybutton);
+        } else if (container.parentNode.firstChild == container) {
+            
+        } else if (codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName == "TABLE") {
+            
+            codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.appendChild(copybutton);
+        } else {
+            
+            codeblock.parentNode.appendChild(copybutton);
+        }
+    });
+</script>
+</body>
+
+</html>

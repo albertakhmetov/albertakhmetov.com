@@ -6,8 +6,15 @@
     <description>Recent content on Albert Akhmetov</description>
     <generator>Hugo -- 0.136.5</generator>
     <language>en-us</language>
-    <lastBuildDate>Sun, 16 Mar 2025 12:00:00 +0500</lastBuildDate>
+    <lastBuildDate>Sun, 23 Mar 2025 12:00:00 +0500</lastBuildDate>
     <atom:link href="https://albertakhmetov.com/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Creating a Context Menu for Tray Icons in C# and WinUI</title>
+      <link>https://albertakhmetov.com/posts/2025/creating-a-context-menu-for-tray-icons-in-c%23-and-winui/</link>
+      <pubDate>Sun, 23 Mar 2025 12:00:00 +0500</pubDate>
+      <guid>https://albertakhmetov.com/posts/2025/creating-a-context-menu-for-tray-icons-in-c%23-and-winui/</guid>
+      <description>&lt;p&gt;Today, we’ll explore how to add a native context menu to a tray icon.&lt;/p&gt;</description>
+    </item>
     <item>
       <title>Using NotifyIcon in WinUI 3</title>
       <link>https://albertakhmetov.com/posts/2025/using-notifyicon-in-winui-3/</link>
